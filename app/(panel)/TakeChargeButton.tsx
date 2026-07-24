@@ -20,11 +20,10 @@ export default function TakeChargeButton({ requestId }: { requestId: string }) {
     setErr(null);
 
     const supabase = createClient();
-    const { error } = await supabase.rpc("take_charge", {
+    const { data, error } = await supabase.rpc("take_charge", {
       p_request_id: requestId,
     });
-    // data conterrebbe l'id della conversation creata — servirà in P3.5 per
-    // andare dritti alla chat: router.push(`/casi/${data}`).
+    // data = id della conversation appena creata dalla funzione.
 
     if (error) {
       // es. "Richiesta non disponibile (già presa in carico)" se l'ha presa un collega
@@ -36,7 +35,9 @@ export default function TakeChargeButton({ requestId }: { requestId: string }) {
 
     // Preso in carico: il caso esce da "Casi in arrivo" e l'app del ragazzo
     // scatta da sola a "uno psicologo è con te" (Realtime, P2.6).
+    // P3.5: si entra dritti nella chat, dove va scritto il PRIMO messaggio.
     router.refresh();
+    if (data) router.push(`/casi/${data}`);
   }
 
   return (

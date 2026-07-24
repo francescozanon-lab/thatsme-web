@@ -1,5 +1,6 @@
 // app/(panel)/casi/page.tsx
-// Segnaposto: "I miei casi" (P3.4) + chat psicologo (P3.5) arrivano nel prossimo passo.
+// Segnaposto: l'elenco "I miei casi" è P3.4. La chat del singolo caso esiste già
+// (P3.5, in `casi/[id]/page.tsx`): oggi ci si arriva dalla presa in carico.
 
 import { colors, radius } from "@/lib/panel-theme";
 
@@ -24,7 +25,8 @@ export default function MieiCasiPage() {
           fontSize: "0.95rem",
         }}
       >
-        In arrivo nel prossimo passo (P3.4 / P3.5).
+        L&apos;elenco arriva nel prossimo passo (P3.4). Per ora si entra in un caso
+        subito dopo averlo preso in carico.
       </div>
     </div>
   );
