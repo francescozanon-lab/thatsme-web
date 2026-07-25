@@ -26,6 +26,39 @@ export function dayTime(iso: string): string {
   });
 }
 
+/** Data lunga senza orario: "24 luglio 2026". */
+export function dateLong(iso: string): string {
+  return new Date(iso).toLocaleDateString("it-IT", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: TZ,
+  });
+}
+
+/**
+ * Durata leggibile da un numero di SECONDI: "45 sec", "12 min", "2h 15min", "3g 4h".
+ * `null` (media non calcolabile: nessun dato) → "—".
+ */
+export function durationLabel(seconds: number | null | undefined): string {
+  if (seconds == null) return "—";
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 60) return `${s} sec`;
+
+  const mins = Math.round(s / 60);
+  if (mins < 60) return `${mins} min`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) {
+    const rest = mins % 60;
+    return rest ? `${hours}h ${rest}min` : `${hours}h`;
+  }
+
+  const days = Math.floor(hours / 24);
+  const restH = hours % 24;
+  return restH ? `${days}g ${restH}h` : `${days}g`;
+}
+
 /**
  * Da quanto tempo, in forma corta: "ora", "12 min", "3h 40min", "2 giorni".
  * ⚠️ Legge l'orologio (`Date.now()`): usarla solo nei Server Component, dove la pagina
