@@ -14,9 +14,10 @@ import {
   CATEGORY,
   type CategoryKey,
 } from "@/lib/panel-theme";
+import { hhmm, dayTime } from "@/lib/panel-format";
 import ChatPanel from "./ChatPanel";
 import CaseActions from "./CaseActions";
-import { MSG_COLS, NOTE_STATUS, hhmm, dayTime, type Message } from "./case-data";
+import { MSG_COLS, NOTE_STATUS, type Message } from "./case-data";
 
 // L'id arriva dall'URL: se non è un uuid, Postgres darebbe errore 22P02 → 404 e stop.
 const UUID_RE =

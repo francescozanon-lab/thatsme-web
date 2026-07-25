@@ -9,7 +9,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { colors, radius } from "@/lib/panel-theme";
-import { MSG_COLS, hhmm, type Message } from "./case-data";
+import { hhmm } from "@/lib/panel-format";
+import { MSG_COLS, type Message } from "./case-data";
 
 export default function ChatPanel({
   conversationId,

@@ -28,25 +28,5 @@ export type Message = {
  */
 export const NOTE_STATUS = "note";
 
-/**
- * Orario HH:MM forzato in ora italiana. Il server (Vercel) gira in UTC e il browser no:
- * senza timeZone fissa, l'HTML del server e quello del client non combaciano (hydration).
- */
-export function hhmm(iso: string): string {
-  return new Date(iso).toLocaleTimeString("it-IT", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Rome",
-  });
-}
-
-/** Data + ora estesa (usata nell'elenco delle note interne). */
-export function dayTime(iso: string): string {
-  return new Date(iso).toLocaleString("it-IT", {
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Rome",
-  });
-}
+// Gli orari si formattano con `@/lib/panel-format` (fuso Europe/Rome dichiarato:
+// vedi lì il perché). Prima stavano qui, ora servono anche a "I miei casi" (P3.4).

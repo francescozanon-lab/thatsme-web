@@ -10,19 +10,11 @@ import {
   CATEGORY,
   type CategoryKey,
 } from "@/lib/panel-theme";
+import { hhmm, sinceLabel } from "@/lib/panel-format";
 import TakeChargeButton from "./TakeChargeButton";
 import RefreshButton from "./RefreshButton";
 
 type Req = { id: string; category: CategoryKey; created_at: string };
-
-function waitedSince(iso: string): string {
-  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 1) return "ora";
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m ? `${h}h ${m}min` : `${h}h`;
-}
 
 export default async function CasiInArrivoPage() {
   const supabase = await createClient();
@@ -61,10 +53,7 @@ export default async function CasiInArrivoPage() {
           {requests.map((r) => {
             const cat =
               CATEGORY[r.category] ?? { label: r.category, fg: colors.muted, bg: colors.bg };
-            const time = new Date(r.created_at).toLocaleTimeString("it-IT", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
+            const time = hhmm(r.created_at);
             return (
               <div key={r.id} style={styles.row}>
                 <div style={styles.rowLeft}>
@@ -73,7 +62,7 @@ export default async function CasiInArrivoPage() {
                   </span>
                   <div style={styles.times}>
                     <span style={styles.time}>arrivata alle {time}</span>
-                    <span style={styles.waited}>in attesa da {waitedSince(r.created_at)}</span>
+                    <span style={styles.waited}>in attesa da {sinceLabel(r.created_at)}</span>
                   </div>
                 </div>
                 <TakeChargeButton requestId={r.id} />
