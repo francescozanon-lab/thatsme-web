@@ -89,6 +89,11 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   `npx tsc --noEmit` non conosce `Deno.serve` e fallirebbe su un file che non appartiene all'app.
 - **Nelle notifiche non entra mai il contenuto** di un messaggio (né nei log della Edge Function): si legge
   dalla schermata di blocco, cioè da chiunque abbia in mano il telefono. Testo neutro, sempre.
+- **Errori a schermo: MAI il messaggio tecnico** (P4.3). Lato app si usa `reportFailure(tag, err, fallback)`
+  da `@/lib/errors`: dettaglio nel **log**, frase sullo **schermo**. Nel pannello la regola è più morbida —
+  chi legge è uno psicologo, e un codice d'errore può girarlo a noi — ma la forma resta quella già usata in
+  `CaseActions.tsx`: *«Non sono riuscito a chiudere: {err}»*, mai l'errore nudo.
+  ⚠️ **I testi dell'app sono segnaposto**: la versione definitiva la daranno gli **psicologi**.
 
 ## Stato attuale (sintesi — dettaglio in `progress.md`)
 - ✅ **P0** (manca solo P0.4 account Vercel) · ✅ **P1** (schema, RLS+GRANT, auth app, auth pannello) ·
@@ -117,7 +122,12 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   indirizzo consegnabile; si toglie quando è verificato il dominio **`thats-me.it`** (comprato il 26/07).
   🔐 **Da fare prima del pilota:** rigenerare `NOTIFY_HOOK_SECRET` (transitato in chiaro durante il debug
   del 27/07) — nuovo secret + stesso valore nell'header dei due webhook + **deploy rifatto**.
-- Poi: **P4.3 polish** → **distribuzione** (Resend + Vercel + build EAS) = **B1** (loop reale con psicologi
+- ▶️ **P4.3 polish — blocco A+B+C fatto (27/07/2026).** Censimento completo in `progress.md`. **Il pannello
+  era già a posto** (stati vuoti ed errori curati in P3, conferma vera prima di chiudere un caso): l'unica
+  voce che lo riguardava era il testo di `casi/page.tsx` che citava ancora "P3.6", ora corretto. Il resto del
+  lavoro era nell'app. **Restano D** (debiti tecnici lato app + una policy RLS) **ed E** (notifica allo
+  psicologo sulla risposta del ragazzo, decisa **col freno** anti-spam).
+- Poi: **distribuzione** (Resend + Vercel + build EAS `preview`) = **B1** (loop reale con psicologi
   veri + tester adulti).
 - Dopo B1: 🔀 **VARIAZIONE V1–V7** (modello a 3 livelli). In parallelo, **binario legale** F1→F2→F3.5 =
   cancello per **B2** (ragazzi veri).

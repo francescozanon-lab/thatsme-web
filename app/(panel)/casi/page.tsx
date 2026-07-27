@@ -178,7 +178,7 @@ export default async function MieiCasiPage() {
             title="Risolti"
             hint="Casi chiusi."
             cases={risolti}
-            emptyText="Nessun caso chiuso: la chiusura arriva nel prossimo passo (P3.6)."
+            emptyText="Nessun caso chiuso, per ora. Quando ne chiudi uno lo ritrovi qui."
           />
         </div>
       )}
