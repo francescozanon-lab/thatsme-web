@@ -138,7 +138,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ⚠️ Riguarda anche questo repo: da quando la RLS blocca gli invii a caso chiuso, `ChatPanel.tsx` può
   ricevere quel rifiuto se lo psicologo chiude il caso **da una seconda scheda** con la chat aperta nella
   prima. Lasciato com'è di proposito — chi legge è uno psicologo, non un ragazzo — ma è la ragione per cui
-  esiste. ✅ La migrazione è **applicata e verificata** (28/07/2026, entrambe le prove comportamentali).
+  esiste. ✅ La migrazione è **applicata** (28/07/2026; presenza della policy confermata da `pg_policies`).
   **E (28/07/2026): lo psicologo assegnato riceve una email quando il ragazzo risponde** — nuovo ramo nella
   Edge Function + `db/notify_reply.sql` (**in `thatsme-app/db/`**). Freno a due regole: se il ragazzo sta
   rispondendo a un messaggio dello psicologo l'email parte sempre, altrimenti max una ogni 15 minuti per
