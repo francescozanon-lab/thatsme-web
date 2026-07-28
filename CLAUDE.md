@@ -131,7 +131,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ⚠️ Riguarda anche questo repo: da quando la RLS blocca gli invii a caso chiuso, `ChatPanel.tsx` può
   ricevere quel rifiuto se lo psicologo chiude il caso **da una seconda scheda** con la chat aperta nella
   prima. Lasciato com'è di proposito — chi legge è uno psicologo, non un ragazzo — ma è la ragione per cui
-  esiste. ⏳ La migrazione è scritta ma **non ancora applicata** su Supabase.
+  esiste. ✅ La migrazione è **applicata e verificata** (28/07/2026, entrambe le prove comportamentali).
   **Resta E** (notifica allo psicologo sulla risposta del ragazzo, decisa **col freno** anti-spam).
 - Poi: **distribuzione** (Resend + Vercel + build EAS `preview`) = **B1** (loop reale con psicologi
   veri + tester adulti).
