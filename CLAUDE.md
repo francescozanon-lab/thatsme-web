@@ -2,7 +2,7 @@
 
 > **⚠️ COPIA SINCRONIZZATA.** L'originale vive in **`thatsme-app/CLAUDE.md`**: se modifichi uno dei due,
 > allinea l'altro (i repo sono separati su GitHub, quindi un rimando al file dell'altra cartella qui non
-> funzionerebbe). Allineata il **27/07/2026**.
+> funzionerebbe). Allineata il **28/07/2026**.
 
 > **File di contesto per Claude Code.** Va alla **radice del repo** in cui apri Claude Code. Ci sono **due
 > repo** (`thatsme-app`, `thatsme-web`): tieni una copia di questo file alla radice di **ciascuno**. I due
@@ -122,11 +122,17 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   indirizzo consegnabile; si toglie quando è verificato il dominio **`thats-me.it`** (comprato il 26/07).
   🔐 **Da fare prima del pilota:** rigenerare `NOTIFY_HOOK_SECRET` (transitato in chiaro durante il debug
   del 27/07) — nuovo secret + stesso valore nell'header dei due webhook + **deploy rifatto**.
-- ▶️ **P4.3 polish — blocco A+B+C fatto (27/07/2026).** Censimento completo in `progress.md`. **Il pannello
-  era già a posto** (stati vuoti ed errori curati in P3, conferma vera prima di chiudere un caso): l'unica
-  voce che lo riguardava era il testo di `casi/page.tsx` che citava ancora "P3.6", ora corretto. Il resto del
-  lavoro era nell'app. **Restano D** (debiti tecnici lato app + una policy RLS) **ed E** (notifica allo
-  psicologo sulla risposta del ragazzo, decisa **col freno** anti-spam).
+- ▶️ **P4.3 polish — A+B+C (27/07/2026) + blocco D (28/07/2026).** Censimento completo in `progress.md`.
+  **Il pannello era già a posto** (stati vuoti ed errori curati in P3, conferma vera prima di chiudere un
+  caso): l'unica voce che lo riguardava era il testo di `casi/page.tsx` che citava ancora "P3.6", ora
+  corretto. Il resto del lavoro era nell'app. Il **blocco D** ha chiuso i due debiti tecnici: la finestra
+  cieca del Realtime in `attesa.tsx` e la policy `messages_insert_participants`, che ora rifiuta gli INSERT
+  in una conversazione archiviata (`db/messages_archived.sql`, **in `thatsme-app/db/`**).
+  ⚠️ Riguarda anche questo repo: da quando la RLS blocca gli invii a caso chiuso, `ChatPanel.tsx` può
+  ricevere quel rifiuto se lo psicologo chiude il caso **da una seconda scheda** con la chat aperta nella
+  prima. Lasciato com'è di proposito — chi legge è uno psicologo, non un ragazzo — ma è la ragione per cui
+  esiste. ⏳ La migrazione è scritta ma **non ancora applicata** su Supabase.
+  **Resta E** (notifica allo psicologo sulla risposta del ragazzo, decisa **col freno** anti-spam).
 - Poi: **distribuzione** (Resend + Vercel + build EAS `preview`) = **B1** (loop reale con psicologi
   veri + tester adulti).
 - Dopo B1: 🔀 **VARIAZIONE V1–V7** (modello a 3 livelli). In parallelo, **binario legale** F1→F2→F3.5 =
