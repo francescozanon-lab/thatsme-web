@@ -132,7 +132,13 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ricevere quel rifiuto se lo psicologo chiude il caso **da una seconda scheda** con la chat aperta nella
   prima. Lasciato com'è di proposito — chi legge è uno psicologo, non un ragazzo — ma è la ragione per cui
   esiste. ✅ La migrazione è **applicata e verificata** (28/07/2026, entrambe le prove comportamentali).
-  **Resta E** (notifica allo psicologo sulla risposta del ragazzo, decisa **col freno** anti-spam).
+  **E (28/07/2026): lo psicologo assegnato riceve una email quando il ragazzo risponde** — nuovo ramo nella
+  Edge Function + `db/notify_reply.sql` (**in `thatsme-app/db/`**). Freno a due regole: se il ragazzo sta
+  rispondendo a un messaggio dello psicologo l'email parte sempre, altrimenti max una ogni 15 minuti per
+  caso. ⏳ Non ancora attivo: serve la migrazione **e il redeploy** della funzione.
+  ⚠️ **Riguarda questo repo per una cosa sola:** quando il pannello sarà su Vercel, il secret `PANEL_URL`
+  vale il doppio di prima — l'email allo psicologo contiene il **link diretto al caso**
+  (`PANEL_URL/casi/<conversationId>`), che senza quel secret sparisce. Da fare al deploy (P0.4).
 - Poi: **distribuzione** (Resend + Vercel + build EAS `preview`) = **B1** (loop reale con psicologi
   veri + tester adulti).
 - Dopo B1: 🔀 **VARIAZIONE V1–V7** (modello a 3 livelli). In parallelo, **binario legale** F1→F2→F3.5 =
