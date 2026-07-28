@@ -65,6 +65,13 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   (le `()` sono speciali in PowerShell).
 - **PowerShell 5.1 non conosce `&&`:** `cd X && npm run dev` non parte nemmeno (errore di sintassi). Dare
   sempre i comandi su **righe separate**.
+- ⚠️ **Copiare un file negli appunti per incollarlo nel dashboard Supabase** (succede a ogni redeploy della
+  Edge Function e a ogni migrazione): **`clip` e il `Get-Content` nudo rovinano gli accenti** — PowerShell 5.1
+  legge in ANSI, e `è` diventa `Ã¨`. Non è un problema estetico: quel testo finisce nelle **email vere** agli
+  psicologi. Il comando giusto è
+  `Get-Content -Raw -Encoding UTF8 <file> | Set-Clipboard`
+  (in Git Bash `cat file | clip` ha lo stesso difetto: clip.exe si aspetta ANSI o UTF-16).
+  A prova di errore in ogni caso: aprire il file nell'editor e Ctrl+A / Ctrl+C.
 - **Realtime:** `supabase.realtime.setAuth(access_token)` **prima** di `.subscribe()`; la tabella dev'essere in
   `supabase_realtime` (`db/realtime.sql`). Rispetta la RLS.
 - **Tastiera/chat:** `app.json` → `android.softwareKeyboardLayoutMode: "resize"`; dopo aver toccato `app.json`,
