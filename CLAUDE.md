@@ -142,7 +142,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   **E (28/07/2026): lo psicologo assegnato riceve una email quando il ragazzo risponde** — nuovo ramo nella
   Edge Function + `db/notify_reply.sql` (**in `thatsme-app/db/`**). Freno a due regole: se il ragazzo sta
   rispondendo a un messaggio dello psicologo l'email parte sempre, altrimenti max una ogni 15 minuti per
-  caso. ⏳ Non ancora attivo: serve la migrazione **e il redeploy** della funzione.
+  caso. ✅ Attivato il 28/07/2026 (migrazione + redeploy); ⏳ manca solo la prova a video.
   ⚠️ **Riguarda questo repo per una cosa sola:** quando il pannello sarà su Vercel, il secret `PANEL_URL`
   vale il doppio di prima — l'email allo psicologo contiene il **link diretto al caso**
   (`PANEL_URL/casi/<conversationId>`), che senza quel secret sparisce. Da fare al deploy (P0.4).
