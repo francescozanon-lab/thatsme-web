@@ -148,10 +148,18 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ⚠️ **Riguarda questo repo per una cosa sola:** quando il pannello sarà su Vercel, il secret `PANEL_URL`
   vale il doppio di prima — l'email allo psicologo contiene il **link diretto al caso**
   (`PANEL_URL/casi/<conversationId>`), che senza quel secret sparisce. Da fare al deploy (P0.4).
-- Poi: **distribuzione** (Resend + Vercel + build EAS `preview`) = **B1** (loop reale con psicologi
-  veri + tester adulti).
-- Dopo B1: 🔀 **VARIAZIONE V1–V7** (modello a 3 livelli). In parallelo, **binario legale** F1→F2→F3.5 =
-  cancello per **B2** (ragazzi veri).
+- ▶️ **LAVORO IN CORSO = 🔀 VARIAZIONE (modello a 3 livelli), decisa PRIMA di B1 il 29/07/2026.**
+  Non si dà a psicologi e tester adulti un'app che poi cambia nel flusso e nel pannello.
+  ⚠️ **Questo repo è il primo a muoversi dopo lo schema:** **V2 = modulo contenuti (CMS-lite)** — editor
+  articoli per livello+categoria, riferimenti culturali (M:N con descrizione per aggancio), domande guidate.
+  È il blocco grosso nuovo, e il **Checkpoint CMS** (psicologi che provano l'interfaccia) è il primo
+  traguardo del piano. Poi il pannello riceve **livello + categoria sui casi** e lo **sticky assignment**.
+  **Ruoli:** il "psicologo - pubblicatore" è una **capacità** (`can_publish`), non un ruolo nuovo → il
+  modulo contenuti si mostra o si nasconde in base a quella, e nulla di esistente cambia comportamento.
+- **P0.4 (deploy su Vercel) sale di priorità:** al Checkpoint CMS gli psicologi devono entrare nel pannello
+  **da casa loro**. Poi il secret `PANEL_URL`. B1 non si consegna finché la variazione non è in piedi, ma
+  la distribuzione si **prepara** in parallelo.
+- In parallelo, **binario legale** F1→F2→F3.5 = cancello per **B2** (ragazzi veri).
 
 ## Come lavorare con me (workflow)
 - **Rituale a inizio task** (3 domande, da `progress.md`): 1) l'output dello step precedente funziona?
