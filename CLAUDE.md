@@ -129,7 +129,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   indirizzo consegnabile; si toglie quando è verificato il dominio **`thats-me.it`** (comprato il 26/07).
   🔐 **Da fare prima del pilota:** rigenerare `NOTIFY_HOOK_SECRET` (transitato in chiaro durante il debug
   del 27/07) — nuovo secret + stesso valore nell'header dei due webhook + **deploy rifatto**.
-- ▶️ **P4.3 polish — A+B+C (27/07/2026) + blocco D (28/07/2026).** Censimento completo in `progress.md`.
+- ✅ **P4.3 polish — CHIUSA (A+B+C 27/07, D ed E 28/07, prova end-to-end di E 29/07/2026).**
+  **→ Il CODICE di B1 è finito**: resta la distribuzione, e per questo repo significa **P0.4 = deploy su
+  Vercel** (poi il secret `PANEL_URL`). Censimento completo in `progress.md`.
   **Il pannello era già a posto** (stati vuoti ed errori curati in P3, conferma vera prima di chiudere un
   caso): l'unica voce che lo riguardava era il testo di `casi/page.tsx` che citava ancora "P3.6", ora
   corretto. Il resto del lavoro era nell'app. Il **blocco D** ha chiuso i due debiti tecnici: la finestra
@@ -142,7 +144,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   **E (28/07/2026): lo psicologo assegnato riceve una email quando il ragazzo risponde** — nuovo ramo nella
   Edge Function + `db/notify_reply.sql` (**in `thatsme-app/db/`**). Freno a due regole: se il ragazzo sta
   rispondendo a un messaggio dello psicologo l'email parte sempre, altrimenti max una ogni 15 minuti per
-  caso. ✅ Attivato il 28/07/2026 (migrazione + redeploy); ⏳ manca solo la prova a video.
+  caso. ✅ Attivato il 28/07 e **provato end-to-end il 29/07/2026**.
   ⚠️ **Riguarda questo repo per una cosa sola:** quando il pannello sarà su Vercel, il secret `PANEL_URL`
   vale il doppio di prima — l'email allo psicologo contiene il **link diretto al caso**
   (`PANEL_URL/casi/<conversationId>`), che senza quel secret sparisce. Da fare al deploy (P0.4).
