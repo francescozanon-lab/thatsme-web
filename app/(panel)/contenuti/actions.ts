@@ -20,6 +20,15 @@ import { requirePublisher } from "./guard";
 import { UUID_RE, type EsitoForm } from "./content-data";
 
 // ------------------------------------------------------------
+// Perché più bottoni condividono UNA sola azione
+// ------------------------------------------------------------
+// Sia qui sia nel form dell'articolo, bottoni diversi inviano lo stesso form con un
+// valore diverso. Non è un trucco: è ciò che garantisce **un solo posto** in cui
+// l'errore può comparire. Con un'azione per bottone, prima o poi una di esse
+// fallisce in silenzio — e in questo pannello un salvataggio perso è il lavoro di
+// uno psicologo buttato via.
+
+// ------------------------------------------------------------
 // Lettura e controllo dei campi, in comune fra creazione e modifica
 // ------------------------------------------------------------
 type Campi = { level: number; category_id: string; title: string; body: string };
@@ -108,5 +117,134 @@ export async function salvaArticolo(
 
   revalidatePath("/contenuti");
   revalidatePath(`/contenuti/${id}`);
+  return { errore: null };
+}
+
+// ------------------------------------------------------------
+// AGGANCIA un riferimento culturale a un articolo
+// ------------------------------------------------------------
+// Due strade nello stesso form: scegliere un film/canzone già in elenco, oppure
+// crearne uno al volo. La seconda esiste perché costringere a passare da una
+// schermata separata per poi tornare indietro è il modo migliore per far
+// abbandonare uno strumento — e chi scrive un articolo ha in mente il film adesso.
+export async function agganciaRiferimento(
+  articleId: string,
+  _prev: EsitoForm,
+  formData: FormData,
+): Promise<EsitoForm> {
+  const { supabase, professionalId } = await requirePublisher();
+
+  if (!UUID_RE.test(articleId)) return { errore: "Articolo non riconosciuto." };
+
+  const modo = String(formData.get("modo") ?? "esistente");
+  let refId = "";
+
+  if (modo === "nuovo") {
+    const kind = String(formData.get("kind") ?? "");
+    const title = String(formData.get("titolo") ?? "").trim();
+
+    if (kind !== "film" && kind !== "song") {
+      return { errore: "Scegli se è un film o una canzone." };
+    }
+    if (!title) return { errore: "Manca il titolo del film o della canzone." };
+
+    const { data, error } = await supabase
+      .from("cultural_refs")
+      .insert({ kind, title, created_by: professionalId })
+      .select("id")
+      .single();
+
+    if (error) return { errore: `Non sono riuscito a crearlo: ${error.message}` };
+    refId = data.id as string;
+  } else {
+    refId = String(formData.get("ref_id") ?? "");
+    if (!UUID_RE.test(refId)) {
+      return { errore: "Scegli un riferimento dall'elenco, o creane uno nuovo." };
+    }
+  }
+
+  // In coda agli altri. L'ordine conta: i riferimenti compaiono PRIMA del testo, e
+  // il primo è quello che il ragazzo legge per primo.
+  const { data: ultimo } = await supabase
+    .from("article_cultural_refs")
+    .select("sort")
+    .eq("article_id", articleId)
+    .order("sort", { ascending: false })
+    .limit(1);
+
+  const sort = ((ultimo?.[0]?.sort as number | undefined) ?? -1) + 1;
+
+  const { error } = await supabase.from("article_cultural_refs").insert({
+    article_id: articleId,
+    cultural_ref_id: refId,
+    description: String(formData.get("descrizione") ?? "").trim(),
+    sort,
+  });
+
+  if (error) {
+    // La chiave primaria è (articolo, riferimento): riagganciare lo stesso film
+    // sbatte qui. Il messaggio di Postgres parlerebbe di "duplicate key", che non
+    // dice niente a uno psicologo.
+    if (error.code === "23505") {
+      return { errore: "Quel riferimento è già agganciato a questo articolo." };
+    }
+    return { errore: `Non sono riuscito ad agganciarlo: ${error.message}` };
+  }
+
+  revalidatePath(`/contenuti/${articleId}`);
+  return { errore: null };
+}
+
+// ------------------------------------------------------------
+// SALVA le descrizioni · oppure SCOLLEGA un riferimento
+// ------------------------------------------------------------
+// Un form solo per tutte le descrizioni, e i bottoni "Rimuovi" di ogni riga sono
+// bottoni dello stesso form che portano l'id da scollegare. Così esiste un solo
+// percorso, e quindi un solo posto dove l'errore compare.
+export async function gestisciAgganci(
+  articleId: string,
+  _prev: EsitoForm,
+  formData: FormData,
+): Promise<EsitoForm> {
+  const { supabase } = await requirePublisher();
+
+  if (!UUID_RE.test(articleId)) return { errore: "Articolo non riconosciuto." };
+
+  // 1) Ha premuto "Rimuovi" su una riga?
+  const scollega = String(formData.get("scollega") ?? "");
+  if (scollega) {
+    if (!UUID_RE.test(scollega)) return { errore: "Riferimento non riconosciuto." };
+
+    const { error } = await supabase
+      .from("article_cultural_refs")
+      .delete()
+      .eq("article_id", articleId)
+      .eq("cultural_ref_id", scollega);
+
+    if (error) return { errore: `Non sono riuscito a rimuoverlo: ${error.message}` };
+
+    revalidatePath(`/contenuti/${articleId}`);
+    return { errore: null };
+  }
+
+  // 2) Altrimenti sta salvando le descrizioni: una riga per campo `desc_<id>`.
+  for (const [chiave, valore] of formData.entries()) {
+    if (!chiave.startsWith("desc_")) continue;
+
+    const refId = chiave.slice(5);
+    if (!UUID_RE.test(refId)) continue;
+
+    const { error } = await supabase
+      .from("article_cultural_refs")
+      .update({ description: String(valore).trim() })
+      .eq("article_id", articleId)
+      .eq("cultural_ref_id", refId);
+
+    // Si ferma al primo errore invece di tirare avanti: se una descrizione non è
+    // stata salvata, dirlo subito è meglio che lasciar credere che sia tutto a posto.
+    if (error) return { errore: `Non sono riuscito a salvare: ${error.message}` };
+  }
+
+  revalidatePath(`/contenuti/${articleId}`);
   return { errore: null };
 }

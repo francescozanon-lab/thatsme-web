@@ -31,6 +31,27 @@ export type Articolo = {
   updated_at: string;
 };
 
+// ------------------------------------------------------------
+// RIFERIMENTI CULTURALI
+// ------------------------------------------------------------
+// Un film o una canzone esiste UNA volta sola (`Riferimento`) e può stare davanti a
+// più articoli. Quello che cambia da un articolo all'altro è la DESCRIZIONE: è il
+// cuore della decisione 4 chiusa col cliente — lo stesso film consigliato davanti a
+// un articolo sulla bulimia e a uno sull'ansia va spiegato in due modi diversi,
+// perché parla di quel problema. Per questo la descrizione sta nell'AGGANCIO.
+export type Riferimento = { id: string; kind: "film" | "song"; title: string };
+
+export type Aggancio = {
+  cultural_ref_id: string;
+  description: string;
+  sort: number;
+};
+
+export const TIPO_RIFERIMENTO: Record<Riferimento["kind"], string> = {
+  film: "Film",
+  song: "Canzone",
+};
+
 /** Esito di un invio del form. `errore: null` = è andata. */
 export type EsitoForm = { errore: string | null };
 export const ESITO_INIZIALE: EsitoForm = { errore: null };

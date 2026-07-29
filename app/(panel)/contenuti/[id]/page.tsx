@@ -4,9 +4,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePublisher } from "../guard";
-import { salvaArticolo } from "../actions";
-import { UUID_RE, type Articolo, type Categoria } from "../content-data";
+import { agganciaRiferimento, gestisciAgganci, salvaArticolo } from "../actions";
+import {
+  UUID_RE,
+  type Aggancio,
+  type Articolo,
+  type Categoria,
+  type Riferimento,
+} from "../content-data";
 import ArticleForm from "../ArticleForm";
+import RefsSection from "../RefsSection";
 import { colors, radius } from "@/lib/panel-theme";
 import { dayTime } from "@/lib/panel-format";
 
@@ -20,7 +27,7 @@ export default async function ModificaArticoloPage({
 
   const { supabase } = await requirePublisher();
 
-  const [artRes, catRes] = await Promise.all([
+  const [artRes, catRes, aggRes, refRes] = await Promise.all([
     supabase
       .from("articles")
       .select("id, level, category_id, title, body, status, updated_at")
@@ -31,6 +38,12 @@ export default async function ModificaArticoloPage({
       .select("id, slug, label")
       .eq("is_active", true)
       .order("sort"),
+    supabase
+      .from("article_cultural_refs")
+      .select("cultural_ref_id, description, sort")
+      .eq("article_id", id)
+      .order("sort"),
+    supabase.from("cultural_refs").select("id, kind, title").order("title"),
   ]);
 
   if (!artRes.data) notFound();
@@ -38,6 +51,17 @@ export default async function ModificaArticoloPage({
   const articolo = artRes.data;
   const categorie = (catRes.data ?? []) as Categoria[];
   const pubblicato = articolo.status === "published";
+
+  // L'unione la faccio qui invece di chiederla al database con una query annidata:
+  // i riferimenti servono comunque tutti (per il menu "scegli uno già inserito"),
+  // quindi incrociarli in memoria non costa una riga in più di rete — e i tipi
+  // restano semplici, che su una query annidata non è scontato.
+  const riferimenti = (refRes.data ?? []) as Riferimento[];
+  const perId = new Map(riferimenti.map((r) => [r.id, r]));
+  const agganci = ((aggRes.data ?? []) as Aggancio[]).map((a) => ({
+    ...a,
+    riferimento: perId.get(a.cultural_ref_id),
+  }));
 
   return (
     <div>
@@ -73,6 +97,13 @@ export default async function ModificaArticoloPage({
         categorie={categorie}
         articolo={articolo}
         azione={salvaArticolo.bind(null, articolo.id)}
+      />
+
+      <RefsSection
+        agganci={agganci}
+        riferimenti={riferimenti}
+        aggancia={agganciaRiferimento.bind(null, articolo.id)}
+        gestisci={gestisciAgganci.bind(null, articolo.id)}
       />
     </div>
   );
