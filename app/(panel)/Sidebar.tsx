@@ -14,8 +14,15 @@ const NAV = [
   { href: "/profilo", label: "Profilo" },
 ];
 
-export default function Sidebar() {
+// V2 — La voce del modulo contenuti, riservata a chi ha `can_publish`.
+// ⚠️ Nasconderla è SOLO cortesia verso chi non pubblica: non è una protezione. La
+// protezione è la RLS (rifiuta le scritture) più il cancello lato server in
+// contenuti/guard.ts (rimanda indietro chi digita l'indirizzo a mano).
+const NAV_CONTENUTI = { href: "/contenuti", label: "Contenuti" };
+
+export default function Sidebar({ canPublish }: { canPublish: boolean }) {
   const pathname = usePathname();
+  const voci = canPublish ? [...NAV, NAV_CONTENUTI] : NAV;
 
   return (
     <aside style={styles.aside}>
@@ -24,7 +31,7 @@ export default function Sidebar() {
         <span style={styles.brandSub}>area psicologi</span>
       </div>
       <nav style={styles.nav}>
-        {NAV.map((item) => {
+        {voci.map((item) => {
           const active =
             item.href === "/"
               ? pathname === "/"

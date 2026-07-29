@@ -23,9 +23,11 @@ export default async function PanelLayout({
 
   // GATE PROFESSIONISTA (come in P1.4): legge la PROPRIA riga in professionals.
   // Un account "ragazzo" non vede righe (RLS) → data null → fuori.
+  // `can_publish` (V2) decide se compare la voce "Contenuti": è cortesia verso chi
+  // non pubblica, non una protezione — quella è la RLS più contenuti/guard.ts.
   const { data: pro } = await supabase
     .from("professionals")
-    .select("full_name, role")
+    .select("full_name, role, can_publish")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -36,7 +38,7 @@ export default async function PanelLayout({
 
   return (
     <div style={styles.shell}>
-      <Sidebar />
+      <Sidebar canPublish={!!pro.can_publish} />
       <div style={styles.main}>
         <header style={styles.header}>
           <div>
