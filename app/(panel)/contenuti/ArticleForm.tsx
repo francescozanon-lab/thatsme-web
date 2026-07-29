@@ -7,11 +7,13 @@
 
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { colors, radius } from "@/lib/panel-theme";
 import {
   ESITO_INIZIALE,
   LIVELLI,
+  MARCA_GRASSETTO,
+  segmentaTesto,
   type Articolo,
   type Categoria,
   type EsitoForm,
@@ -31,6 +33,60 @@ export default function ArticleForm({
   const [esito, submit, inCorso] = useActionState(azione, ESITO_INIZIALE);
   const modifica = !!articolo;
   const pubblicato = articolo?.status === "published";
+
+  // Il testo è "controllato" (lo tiene React) per due motivi che vanno insieme:
+  // il bottone Grassetto deve poter riscrivere il campo attorno alla selezione, e
+  // l'anteprima qui sotto deve aggiornarsi mentre si scrive.
+  const [testo, setTesto] = useState(articolo?.body ?? "");
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Mette o toglie il grassetto sulla porzione selezionata.
+  // Nessuno deve imparare una sintassi: si seleziona e si preme, come ovunque.
+  function toggleGrassetto() {
+    const area = areaRef.current;
+    if (!area) return;
+
+    const da = area.selectionStart;
+    const a = area.selectionEnd;
+    const selezione = testo.slice(da, a);
+
+    // Niente selezione: apro i marcatori e lascio il cursore in mezzo, così chi
+    // preme il bottone *prima* di scrivere ottiene comunque quello che si aspetta.
+    if (da === a) {
+      const nuovo = testo.slice(0, da) + MARCA_GRASSETTO + MARCA_GRASSETTO + testo.slice(a);
+      setTesto(nuovo);
+      const cursore = da + MARCA_GRASSETTO.length;
+      requestAnimationFrame(() => {
+        area.focus();
+        area.setSelectionRange(cursore, cursore);
+      });
+      return;
+    }
+
+    // Già in grassetto → lo tolgo. Senza questo, premere due volte produrrebbe
+    // asterischi dentro asterischi e un risultato che non si capisce.
+    const giaGrassetto =
+      selezione.startsWith(MARCA_GRASSETTO) && selezione.endsWith(MARCA_GRASSETTO);
+    const sostituto = giaGrassetto
+      ? selezione.slice(2, -2)
+      : MARCA_GRASSETTO + selezione + MARCA_GRASSETTO;
+
+    setTesto(testo.slice(0, da) + sostituto + testo.slice(a));
+    requestAnimationFrame(() => {
+      area.focus();
+      area.setSelectionRange(da, da + sostituto.length);
+    });
+  }
+
+  // Ctrl+B (Cmd+B sul Mac): è il gesto che le dita fanno da sole.
+  function tastiera(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+      e.preventDefault();
+      toggleGrassetto();
+    }
+  }
+
+  const pezzi = segmentaTesto(testo);
 
   return (
     <form action={submit} style={styles.form}>
@@ -96,20 +152,56 @@ export default function ArticleForm({
         />
       </label>
 
-      <label style={styles.campo}>
-        <span style={styles.etichetta}>Testo</span>
+      <div style={styles.campo}>
+        <div style={styles.barraTesto}>
+          <span style={styles.etichetta}>Testo</span>
+          <button
+            type="button"
+            onClick={toggleGrassetto}
+            title="Grassetto (Ctrl+B) — seleziona il testo e premi"
+            style={styles.btnGrassetto}
+          >
+            <strong>G</strong>
+          </button>
+        </div>
+
         <textarea
+          ref={areaRef}
           name="body"
-          defaultValue={articolo?.body ?? ""}
-          rows={16}
+          value={testo}
+          onChange={(e) => setTesto(e.target.value)}
+          onKeyDown={tastiera}
+          rows={14}
           placeholder="Il testo dell'articolo…"
           style={{ ...styles.input, ...styles.textarea }}
         />
         <span style={styles.aiuto}>
-          Per ora è testo semplice: gli a capo si vedono, grassetti ed elenchi no. Se
-          servono, si decide insieme dopo che avrete provato a scrivere qualcosa.
+          Per il grassetto: seleziona le parole e premi <strong>G</strong> (o Ctrl+B).
+          Nel campo compaiono due asterischi ai lati — sono solo il segno, il ragazzo
+          vedrà il grassetto come nell&apos;anteprima qui sotto.
         </span>
-      </label>
+      </div>
+
+      {/* L'anteprima non è un vezzo: è ciò che permette di non pensare agli
+          asterischi. Chi scrive guarda qui e vede la pagina che leggerà il ragazzo. */}
+      <div style={styles.campo}>
+        <span style={styles.etichetta}>Come lo vedrà il ragazzo</span>
+        <div style={styles.anteprima}>
+          {testo.trim() ? (
+            pezzi.map((p, i) =>
+              p.grassetto ? (
+                <strong key={i}>{p.testo}</strong>
+              ) : (
+                <span key={i}>{p.testo}</span>
+              ),
+            )
+          ) : (
+            <span style={styles.anteprimaVuota}>
+              Qui comparirà il testo mentre lo scrivi.
+            </span>
+          )}
+        </div>
+      </div>
 
       {esito.errore ? <div style={styles.errore}>{esito.errore}</div> : null}
 
@@ -168,6 +260,31 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: "border-box",
   },
   textarea: { resize: "vertical", lineHeight: 1.55 },
+  barraTesto: { display: "flex", alignItems: "center", gap: "0.6rem" },
+  btnGrassetto: {
+    width: 30,
+    height: 28,
+    borderRadius: 8,
+    border: `1px solid ${colors.btnBorder}`,
+    background: colors.btnBg,
+    color: colors.btnText,
+    fontSize: "0.9rem",
+    cursor: "pointer",
+    lineHeight: 1,
+  },
+  anteprima: {
+    padding: "0.9rem 1rem",
+    minHeight: 90,
+    borderRadius: radius.control,
+    border: `1px solid ${colors.border}`,
+    background: colors.surface,
+    color: colors.text,
+    fontSize: "0.95rem",
+    lineHeight: 1.6,
+    whiteSpace: "pre-wrap",   // gli a capo scritti nel campo si vedono anche qui
+    wordBreak: "break-word",
+  },
+  anteprimaVuota: { color: colors.muted, fontStyle: "italic" },
   note: {
     display: "flex",
     flexDirection: "column",
