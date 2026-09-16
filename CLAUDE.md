@@ -2,7 +2,7 @@
 
 > **⚠️ COPIA SINCRONIZZATA.** L'originale vive in **`thatsme-app/CLAUDE.md`**: se modifichi uno dei due,
 > allinea l'altro (i repo sono separati su GitHub, quindi un rimando al file dell'altra cartella qui non
-> funzionerebbe). Allineata il **28/07/2026**.
+> funzionerebbe). Allineata il **16/09/2026**.
 
 > **File di contesto per Claude Code.** Va alla **radice del repo** in cui apri Claude Code. Ci sono **due
 > repo** (`thatsme-app`, `thatsme-web`): tieni una copia di questo file alla radice di **ciascuno**. I due
@@ -96,6 +96,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   `npx tsc --noEmit` non conosce `Deno.serve` e fallirebbe su un file che non appartiene all'app.
 - **Nelle notifiche non entra mai il contenuto** di un messaggio (né nei log della Edge Function): si legge
   dalla schermata di blocco, cioè da chiunque abbia in mano il telefono. Testo neutro, sempre.
+  **Vale anche per la provenienza del caso** (categoria · sottocategoria · livello, decisione 27 del
+  16/09/2026): si vede **solo nel pannello**, mai in email o push. «Orientamento sessuale e affettivo» su una
+  schermata di blocco è un dato sensibile di un minore.
 - **Errori a schermo: MAI il messaggio tecnico** (P4.3). Lato app si usa `reportFailure(tag, err, fallback)`
   da `@/lib/errors`: dettaglio nel **log**, frase sullo **schermo**. Nel pannello la regola è più morbida —
   chi legge è uno psicologo, e un codice d'errore può girarlo a noi — ma la forma resta quella già usata in
@@ -151,9 +154,18 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - ▶️ **LAVORO IN CORSO = 🔀 VARIAZIONE (modello a 3 livelli), decisa PRIMA di B1 il 29/07/2026.**
   Non si dà a psicologi e tester adulti un'app che poi cambia nel flusso e nel pannello.
   ⚠️ **Questo repo è il primo a muoversi dopo lo schema:** **V2 = modulo contenuti (CMS-lite)** — editor
-  articoli per livello+categoria, riferimenti culturali (M:N con descrizione per aggancio), domande guidate.
+  articoli ✅ e riferimenti culturali ✅ (M:N con descrizione per aggancio), fatti e provati il 29/07/2026.
   È il blocco grosso nuovo, e il **Checkpoint CMS** (psicologi che provano l'interfaccia) è il primo
-  traguardo del piano. Poi il pannello riceve **livello + categoria sui casi** e lo **sticky assignment**.
+  traguardo del piano. Poi il pannello riceve **livello + categoria + sottocategoria sui casi** e lo
+  **sticky assignment**.
+  **📥 16/09/2026 — contenuti veri arrivati e flusso definitivo** (solo allineamento, nessun codice).
+  **Domande guidate ELIMINATE** dagli psicologi → l'editor ad albero **non si fa**. Il modello è
+  **8 categorie** (l'ottava «Placeholder») × **5 sottocategorie** × 3 livelli = **120 articoli, uno per
+  casella**. Per questo repo significa: **griglia di 120 caselle al posto del bottone «Nuovo articolo»**
+  (il database rifiuterà i doppioni), articoli agganciati alla sottocategoria, campo «Una domanda per te…»,
+  tipi di riferimento oltre film/canzone + autore/anno. Prima servono la **migrazione V2-bis** e l'**import
+  dai PDF** (lato `thatsme-app`). Decisioni 14–27 e sequenza in `thatsme-app/progress.md`, sezione
+  **0-quinquies**. ⚠️ Maurizio ha **un altro quesito** da porre prima di ripartire.
   **Ruoli:** il "psicologo - pubblicatore" è una **capacità** (`can_publish`), non un ruolo nuovo → il
   modulo contenuti si mostra o si nasconde in base a quella, e nulla di esistente cambia comportamento.
 - **P0.4 (deploy su Vercel) sale di priorità:** al Checkpoint CMS gli psicologi devono entrare nel pannello
