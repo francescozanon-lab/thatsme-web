@@ -1,28 +1,64 @@
 // app/(panel)/contenuti/nuovo/page.tsx
-// V2 — Nuovo articolo. Nasce sempre come BOZZA: la pubblicazione è un gesto a parte,
-// nella pagina di modifica.
+// V2 — Nuovo articolo in una casella VUOTA della griglia. Nasce sempre come BOZZA:
+// la pubblicazione è un gesto a parte, nella pagina di modifica.
+//
+// Dal 16/09/2026 non si sceglie più dove metterlo: ci si arriva dalla griglia
+// cliccando una casella vuota, e la casella (sottocategoria + livello) viaggia
+// nell'indirizzo. Una casella ospita un articolo solo.
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requirePublisher } from "../guard";
 import { creaArticolo } from "../actions";
-import type { Categoria } from "../content-data";
+import { UUID_RE, type Livello } from "../content-data";
 import ArticleForm from "../ArticleForm";
 import { colors } from "@/lib/panel-theme";
 
-export default async function NuovoArticoloPage() {
+export default async function NuovoArticoloPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [chiave: string]: string | string[] | undefined }>;
+}) {
   const { supabase } = await requirePublisher();
 
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, slug, label")
-    .eq("is_active", true)
-    .order("sort");
+  const q = await searchParams;
+  const subcategoryId = typeof q.sottocategoria === "string" ? q.sottocategoria : "";
+  const livello = Number(q.livello);
 
-  const categorie = (data ?? []) as Categoria[];
+  const casellaValida = UUID_RE.test(subcategoryId) && [1, 2, 3].includes(livello);
+
+  const { data: sub } = casellaValida
+    ? await supabase
+        .from("subcategories")
+        .select("id, label, category_id, categories(slug, label)")
+        .eq("id", subcategoryId)
+        .maybeSingle()
+    : { data: null };
+
+  // Qualcuno ha riempito la casella nel frattempo (o si è arrivati da un link
+  // vecchio): invece di un form che fallirebbe al salvataggio, si apre l'articolo
+  // che c'è già.
+  if (sub) {
+    const { data: esistente } = await supabase
+      .from("articles")
+      .select("id")
+      .eq("subcategory_id", sub.id)
+      .eq("level", livello)
+      .maybeSingle();
+    if (esistente) redirect(`/contenuti/${esistente.id}`);
+  }
+
+  // `categories(...)` arriva come oggetto o come array a seconda di come il client
+  // legge la relazione: si normalizza qui invece di fidarsi di una delle due.
+  const cat = sub
+    ? ((Array.isArray(sub.categories) ? sub.categories[0] : sub.categories) as
+        | { slug: string; label: string }
+        | null)
+    : null;
 
   return (
     <div>
-      <Link href="/contenuti" style={styles.indietro}>
+      <Link href={cat ? `/contenuti#${cat.slug}` : "/contenuti"} style={styles.indietro}>
         ← Contenuti
       </Link>
 
@@ -31,15 +67,21 @@ export default async function NuovoArticoloPage() {
         Lo salvi come bozza: non lo vede nessuno finché non lo pubblichi tu.
       </p>
 
-      {/* Senza categorie il form non può funzionare, e un menu a tendina vuoto
-          sembrerebbe un guasto misterioso. Meglio dirlo. */}
-      {error || categorie.length === 0 ? (
-        <div style={styles.errorBox}>
-          Non riesco a leggere le categorie{error ? `: ${error.message}` : ""}. Senza
-          categorie non si può creare un articolo.
-        </div>
+      {sub && cat ? (
+        <ArticleForm
+          posizione={{
+            categoria: cat.label,
+            sottocategoria: sub.label as string,
+            subcategoryId: sub.id as string,
+            livello: livello as Livello,
+          }}
+          azione={creaArticolo}
+        />
       ) : (
-        <ArticleForm categorie={categorie} azione={creaArticolo} />
+        <div style={styles.errorBox}>
+          Un articolo nuovo si crea dalla griglia dei contenuti: scegli la casella vuota
+          in cui metterlo. <Link href="/contenuti">Torna alla griglia</Link>
+        </div>
       )}
     </div>
   );
@@ -61,5 +103,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     color: "#8a2b20",
     fontSize: "0.9rem",
+    maxWidth: 760,
   },
 };

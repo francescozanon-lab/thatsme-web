@@ -29,28 +29,28 @@ import { UUID_RE, type EsitoForm } from "./content-data";
 // uno psicologo buttato via.
 
 // ------------------------------------------------------------
-// Lettura e controllo dei campi, in comune fra creazione e modifica
+// Lettura e controllo dei campi di TESTO, in comune fra creazione e modifica
 // ------------------------------------------------------------
-type Campi = { level: number; category_id: string; title: string; body: string };
+// La POSIZIONE (sottocategoria e livello) non è fra questi: si decide scegliendo la
+// casella nella griglia e non si cambia più. Spostare un articolo vorrebbe dire
+// svuotare una casella e rischiare di trovarne occupata un'altra.
+type Campi = { title: string; body: string; closing_question: string };
 
 function leggiCampi(formData: FormData): { campi: Campi } | { errore: string } {
-  const level = Number(formData.get("level"));
-  const category_id = String(formData.get("category_id") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "");
+  const closing_question = String(formData.get("closing_question") ?? "").trim();
 
   // Messaggi diretti: qui legge un adulto professionista, non un ragazzo. La regola
   // del "mai il messaggio tecnico" vale per l'app; nel pannello serve invece che
   // sappia esattamente cosa manca.
-  if (![1, 2, 3].includes(level)) return { errore: "Scegli il livello dell'articolo." };
-  if (!UUID_RE.test(category_id)) return { errore: "Scegli la categoria." };
   if (!title) return { errore: "L'articolo ha bisogno di un titolo." };
 
-  return { campi: { level, category_id, title, body } };
+  return { campi: { title, body, closing_question } };
 }
 
 // ------------------------------------------------------------
-// CREA — nasce sempre come BOZZA
+// CREA — in una casella vuota, e nasce sempre come BOZZA
 // ------------------------------------------------------------
 // Nessuno pubblica per sbaglio scrivendo: la pubblicazione è un gesto separato,
 // nella pagina di modifica.
@@ -60,16 +60,47 @@ export async function creaArticolo(
 ): Promise<EsitoForm> {
   const { supabase, professionalId } = await requirePublisher();
 
+  const subcategory_id = String(formData.get("subcategory_id") ?? "");
+  const level = Number(formData.get("level"));
+  if (!UUID_RE.test(subcategory_id) || ![1, 2, 3].includes(level)) {
+    return { errore: "Casella non riconosciuta: torna alla griglia e riprova." };
+  }
+
   const letto = leggiCampi(formData);
   if ("errore" in letto) return { errore: letto.errore };
 
+  // La categoria si ricava dalla sottocategoria, sul server: non la manda il browser.
+  // Il database controlla comunque che le due combacino, ma così non c'è niente da
+  // sbagliare in partenza.
+  const { data: sub } = await supabase
+    .from("subcategories")
+    .select("category_id")
+    .eq("id", subcategory_id)
+    .maybeSingle();
+  if (!sub) return { errore: "Sottocategoria non trovata: torna alla griglia e riprova." };
+
   const { data, error } = await supabase
     .from("articles")
-    .insert({ ...letto.campi, status: "draft", author_id: professionalId })
+    .insert({
+      ...letto.campi,
+      level,
+      category_id: sub.category_id,
+      subcategory_id,
+      status: "draft",
+      author_id: professionalId,
+    })
     .select("id")
     .single();
 
   if (error) {
+    // Due persone che scrivono nella stessa casella vuota nello stesso momento: il
+    // database fa entrare il primo e respinge il secondo (`articles_una_per_casella`).
+    if (error.code === "23505") {
+      return {
+        errore:
+          "Nel frattempo qualcun altro ha scritto un articolo in questa casella. Copia da parte il tuo testo e torna alla griglia.",
+      };
+    }
     return { errore: `Non sono riuscito a salvare: ${error.message}` };
   }
 
@@ -123,10 +154,10 @@ export async function salvaArticolo(
 // ------------------------------------------------------------
 // AGGANCIA un riferimento culturale a un articolo
 // ------------------------------------------------------------
-// Due strade nello stesso form: scegliere un film/canzone già in elenco, oppure
-// crearne uno al volo. La seconda esiste perché costringere a passare da una
-// schermata separata per poi tornare indietro è il modo migliore per far
-// abbandonare uno strumento — e chi scrive un articolo ha in mente il film adesso.
+// Due strade nello stesso form: scegliere un'opera già in elenco, oppure crearne una
+// al volo. La seconda esiste perché costringere a passare da una schermata separata
+// per poi tornare indietro è il modo migliore per far abbandonare uno strumento — e
+// chi scrive un articolo ha in mente il film adesso.
 export async function agganciaRiferimento(
   articleId: string,
   _prev: EsitoForm,
@@ -142,15 +173,21 @@ export async function agganciaRiferimento(
   if (modo === "nuovo") {
     const kind = String(formData.get("kind") ?? "");
     const title = String(formData.get("titolo") ?? "").trim();
+    const credits = String(formData.get("crediti") ?? "").trim();
 
-    if (kind !== "film" && kind !== "song") {
-      return { errore: "Scegli se è un film o una canzone." };
-    }
-    if (!title) return { errore: "Manca il titolo del film o della canzone." };
+    // I tipi validi sono quelli della tabella: si chiede a lei invece di tenerne
+    // una copia qui che prima o poi smetterebbe di combaciare.
+    const { data: tipo } = await supabase
+      .from("cultural_ref_kinds")
+      .select("slug")
+      .eq("slug", kind)
+      .maybeSingle();
+    if (!tipo) return { errore: "Scegli il tipo: film, brano, romanzo…" };
+    if (!title) return { errore: "Manca il titolo dell'opera." };
 
     const { data, error } = await supabase
       .from("cultural_refs")
-      .insert({ kind, title, created_by: professionalId })
+      .insert({ kind, title, credits, created_by: professionalId })
       .select("id")
       .single();
 
@@ -163,8 +200,8 @@ export async function agganciaRiferimento(
     }
   }
 
-  // In coda agli altri. L'ordine conta: i riferimenti compaiono PRIMA del testo, e
-  // il primo è quello che il ragazzo legge per primo.
+  // In coda agli altri. L'ordine conta: nella sezione «Guarda, leggi, ascolta…»,
+  // DOPO il testo (decisione 21 del 16/09/2026), il primo è quello che si legge prima.
   const { data: ultimo } = await supabase
     .from("article_cultural_refs")
     .select("sort")

@@ -9,8 +9,8 @@ import {
   UUID_RE,
   type Aggancio,
   type Articolo,
-  type Categoria,
   type Riferimento,
+  type TipoRiferimento,
 } from "../content-data";
 import ArticleForm from "../ArticleForm";
 import RefsSection from "../RefsSection";
@@ -27,30 +27,41 @@ export default async function ModificaArticoloPage({
 
   const { supabase } = await requirePublisher();
 
-  const [artRes, catRes, aggRes, refRes] = await Promise.all([
+  const [artRes, aggRes, refRes, tipiRes] = await Promise.all([
     supabase
       .from("articles")
-      .select("id, level, category_id, title, body, status, updated_at")
+      .select(
+        "id, level, category_id, subcategory_id, title, body, closing_question, status, updated_at",
+      )
       .eq("id", id)
       .maybeSingle<Articolo>(),
-    supabase
-      .from("categories")
-      .select("id, slug, label")
-      .eq("is_active", true)
-      .order("sort"),
     supabase
       .from("article_cultural_refs")
       .select("cultural_ref_id, description, sort")
       .eq("article_id", id)
       .order("sort"),
-    supabase.from("cultural_refs").select("id, kind, title").order("title"),
+    supabase.from("cultural_refs").select("id, kind, title, credits").order("title"),
+    supabase.from("cultural_ref_kinds").select("slug, label").order("sort"),
   ]);
 
   if (!artRes.data) notFound();
 
   const articolo = artRes.data;
-  const categorie = (catRes.data ?? []) as Categoria[];
   const pubblicato = articolo.status === "published";
+
+  // Dove sta l'articolo, in parole: serve al form (che la mostra) e al link di
+  // ritorno, che riporta alla griglia sulla categoria giusta invece che in cima.
+  const [subRes, catRes] = await Promise.all([
+    supabase.from("subcategories").select("label").eq("id", articolo.subcategory_id).maybeSingle(),
+    supabase.from("categories").select("slug, label").eq("id", articolo.category_id).maybeSingle(),
+  ]);
+  const posizione = {
+    categoria: (catRes.data?.label as string | undefined) ?? "categoria non trovata",
+    sottocategoria: (subRes.data?.label as string | undefined) ?? "sottocategoria non trovata",
+    subcategoryId: articolo.subcategory_id,
+    livello: articolo.level,
+  };
+  const ritorno = catRes.data?.slug ? `/contenuti#${catRes.data.slug}` : "/contenuti";
 
   // L'unione la faccio qui invece di chiederla al database con una query annidata:
   // i riferimenti servono comunque tutti (per il menu "scegli uno già inserito"),
@@ -65,7 +76,7 @@ export default async function ModificaArticoloPage({
 
   return (
     <div>
-      <Link href="/contenuti" style={styles.indietro}>
+      <Link href={ritorno} style={styles.indietro}>
         ← Contenuti
       </Link>
 
@@ -83,18 +94,8 @@ export default async function ModificaArticoloPage({
       </div>
       <p style={styles.sub}>Ultimo aggiornamento: {dayTime(articolo.updated_at)}</p>
 
-      {/* La categoria dell'articolo potrebbe essere stata disattivata dopo: in quel
-          caso non comparirebbe nel menu e il form si aprirebbe con la tendina vuota,
-          facendo sembrare persa una scelta che invece c'è. Meglio dirlo. */}
-      {categorie.some((c) => c.id === articolo.category_id) ? null : (
-        <div style={styles.avviso}>
-          La categoria di questo articolo non è più fra quelle attive: scegline
-          un&apos;altra prima di salvare, o l&apos;articolo resterà dov&apos;è.
-        </div>
-      )}
-
       <ArticleForm
-        categorie={categorie}
+        posizione={posizione}
         articolo={articolo}
         azione={salvaArticolo.bind(null, articolo.id)}
       />
@@ -102,6 +103,8 @@ export default async function ModificaArticoloPage({
       <RefsSection
         agganci={agganci}
         riferimenti={riferimenti}
+        tipi={(tipiRes.data ?? []) as TipoRiferimento[]}
+        livello={articolo.level}
         aggancia={agganciaRiferimento.bind(null, articolo.id)}
         gestisci={gestisciAgganci.bind(null, articolo.id)}
       />
@@ -130,14 +133,4 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: radius.pill,
   },
   sub: { margin: "0.3rem 0 1.5rem", fontSize: "0.85rem", color: colors.muted },
-  avviso: {
-    padding: "0.8rem 1rem",
-    marginBottom: "1.25rem",
-    background: "#fdf4e3",
-    border: "1px solid #eddcb6",
-    borderRadius: radius.control,
-    color: "#7a5b12",
-    fontSize: "0.88rem",
-    maxWidth: 760,
-  },
 };

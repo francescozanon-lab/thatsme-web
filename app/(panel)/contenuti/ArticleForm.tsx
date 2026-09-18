@@ -13,18 +13,27 @@ import {
   ESITO_INIZIALE,
   LIVELLI,
   MARCA_GRASSETTO,
+  eSegnaposto,
   segmentaTesto,
   type Articolo,
-  type Categoria,
   type EsitoForm,
+  type Livello,
 } from "./content-data";
 
+/** La casella della griglia in cui vive l'articolo. Si sceglie lì, qui si mostra. */
+export type Posizione = {
+  categoria: string;
+  sottocategoria: string;
+  subcategoryId: string;
+  livello: Livello;
+};
+
 export default function ArticleForm({
-  categorie,
+  posizione,
   azione,
   articolo,
 }: {
-  categorie: Categoria[];
+  posizione: Posizione;
   /** Server Action già legata all'id, se stiamo modificando. */
   azione: (prev: EsitoForm, formData: FormData) => Promise<EsitoForm>;
   /** Assente = nuovo articolo. */
@@ -33,6 +42,8 @@ export default function ArticleForm({
   const [esito, submit, inCorso] = useActionState(azione, ESITO_INIZIALE);
   const modifica = !!articolo;
   const pubblicato = articolo?.status === "published";
+  const livello = LIVELLI.find((l) => l.value === posizione.livello);
+  const domandaIniziale = articolo?.closing_question ?? "";
 
   // Il testo è "controllato" (lo tiene React) per due motivi che vanno insieme:
   // il bottone Grassetto deve poter riscrivere il campo attorno alla selezione, e
@@ -90,54 +101,26 @@ export default function ArticleForm({
 
   return (
     <form action={submit} style={styles.form}>
-      <div style={styles.riga}>
-        <label style={styles.campo}>
-          <span style={styles.etichetta}>Livello</span>
-          <select
-            name="level"
-            defaultValue={articolo?.level ?? ""}
-            required
-            style={styles.input}
-          >
-            <option value="" disabled>
-              Scegli…
-            </option>
-            {LIVELLI.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </label>
+      {/* La posizione si mostra e basta: si è scelta nella griglia, e in una casella
+          sta un articolo solo. In creazione viaggia nascosta insieme al testo. */}
+      {modifica ? null : (
+        <>
+          <input type="hidden" name="subcategory_id" value={posizione.subcategoryId} />
+          <input type="hidden" name="level" value={posizione.livello} />
+        </>
+      )}
 
-        <label style={styles.campo}>
-          <span style={styles.etichetta}>Categoria</span>
-          <select
-            name="category_id"
-            defaultValue={articolo?.category_id ?? ""}
-            required
-            style={styles.input}
-          >
-            <option value="" disabled>
-              Scegli…
-            </option>
-            {categorie.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {/* Il promemoria di chi legge questo livello. Cambia mentre si sceglie, ed è
-          l'unico posto in cui allo psicologo viene ricordato per chi sta scrivendo. */}
+      {/* Il promemoria di chi legge questo livello: è l'unico posto in cui allo
+          psicologo viene ricordato per chi sta scrivendo. */}
       <div style={styles.note}>
-        {LIVELLI.map((l) => (
-          <div key={l.value} style={styles.nota}>
-            <strong style={styles.notaTitolo}>{l.label}</strong> — {l.nota}
+        <div style={styles.posizione}>
+          {posizione.categoria} › {posizione.sottocategoria}
+        </div>
+        {livello ? (
+          <div style={styles.nota}>
+            <strong style={styles.notaTitolo}>{livello.label}</strong> — {livello.nota}
           </div>
-        ))}
+        ) : null}
       </div>
 
       <label style={styles.campo}>
@@ -203,6 +186,25 @@ export default function ArticleForm({
         </div>
       </div>
 
+      {/* «Una domanda per te…» chiude l'articolo: il ragazzo la legge e basta, non
+          risponde (decisione 23). Se è ancora il segnaposto dell'import, lo si dice
+          chiaro invece di lasciarlo passare per un testo vero. */}
+      <label style={styles.campo}>
+        <span style={styles.etichetta}>Una domanda per te…</span>
+        <textarea
+          name="closing_question"
+          defaultValue={domandaIniziale}
+          rows={2}
+          placeholder="La domanda che chiude l'articolo. Il ragazzo la legge, non risponde."
+          style={{ ...styles.input, ...styles.textarea }}
+        />
+        {eSegnaposto(domandaIniziale) || (modifica && !domandaIniziale.trim()) ? (
+          <span style={styles.daCompletare}>
+            Questa domanda è ancora da scrivere: sostituisci il segnaposto con il testo vero.
+          </span>
+        ) : null}
+      </label>
+
       {esito.errore ? <div style={styles.errore}>{esito.errore}</div> : null}
 
       <div style={styles.azioni}>
@@ -245,7 +247,6 @@ export default function ArticleForm({
 
 const styles: Record<string, React.CSSProperties> = {
   form: { display: "flex", flexDirection: "column", gap: "1.1rem", maxWidth: 760 },
-  riga: { display: "flex", gap: "1rem", flexWrap: "wrap" },
   campo: { display: "flex", flexDirection: "column", gap: 6, flex: "1 1 240px", minWidth: 0 },
   etichetta: { fontSize: "0.82rem", fontWeight: 700, color: colors.title },
   input: {
@@ -296,6 +297,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   nota: { fontSize: "0.82rem", color: colors.muted },
   notaTitolo: { color: colors.accentDark },
+  posizione: { fontSize: "0.9rem", fontWeight: 700, color: colors.title },
+  daCompletare: { fontSize: "0.8rem", fontWeight: 700, color: "#9a6b00" },
   aiuto: { fontSize: "0.8rem", color: colors.muted, margin: 0 },
   errore: {
     padding: "0.8rem 1rem",

@@ -13,33 +13,66 @@ export type Livello = 1 | 2 | 3;
 // articolo di livello 1 lo legge un ragazzo che sta bene e sfoglia per curiosità,
 // uno di livello 3 lo legge qualcuno che ha appena detto che è andata male. È la
 // differenza che conta di più nel tono, e va ricordata dove si scrive.
-export const LIVELLI: { value: Livello; label: string; nota: string }[] = [
-  { value: 1, label: "Livello 1 · Tutto bene", nota: "lettura libera, nessuna domanda e nessun contatto" },
-  { value: 2, label: "Livello 2 · Così così", nota: "ci arriva dalle domande guidate, può chiedere aiuto dopo" },
-  { value: 3, label: "Livello 3 · È andata male", nota: "ci arriva chi sta peggio: il contatto è a un passo" },
+// (16/09/2026: niente più domande guidate — si arriva all'articolo scegliendo
+// categoria e sottocategoria; il contatto sta in fondo all'articolo, solo L2 e L3.)
+export const LIVELLI: { value: Livello; label: string; breve: string; nota: string }[] = [
+  { value: 1, label: "Livello 1 · Tutto bene", breve: "Tutto bene", nota: "lettura libera, nessun contatto con lo psicologo" },
+  { value: 2, label: "Livello 2 · Così così", breve: "Così così", nota: "in fondo all'articolo può chiedere di parlare con uno psicologo" },
+  { value: 3, label: "Livello 3 · È andata male", breve: "È andata male", nota: "lo legge chi sta peggio: in fondo c'è il contatto con lo psicologo" },
 ];
 
 export type Categoria = { id: string; slug: string; label: string };
 
+// Cinque per categoria (decisione 16 del 16/09/2026). È ciò che il ragazzo tocca
+// dopo aver scelto la categoria.
+export type Sottocategoria = {
+  id: string;
+  category_id: string;
+  slug: string;
+  label: string;
+};
+
+// Un articolo vive in UNA casella: (sottocategoria, livello). Il database rifiuta
+// il secondo nella stessa casella, e non accetta una sottocategoria sotto la
+// categoria sbagliata. Per questo nel pannello la posizione non si sceglie: si
+// sceglie la casella nella griglia.
 export type Articolo = {
   id: string;
   level: Livello;
   category_id: string;
+  subcategory_id: string;
   title: string;
   body: string;
+  /** «Una domanda per te…» — chiude l'articolo, il ragazzo la legge e basta. */
+  closing_question: string;
   status: "draft" | "published";
   updated_at: string;
 };
 
+// I segnaposto (ottava categoria, domande mancanti) cominciano tutti così:
+// riconoscibili a colpo d'occhio, e quindi anche dal codice.
+export const SEGNAPOSTO = "PLACEHOLDER";
+export const eSegnaposto = (testo: string) => testo.trim().startsWith(SEGNAPOSTO);
+
 // ------------------------------------------------------------
 // RIFERIMENTI CULTURALI
 // ------------------------------------------------------------
-// Un film o una canzone esiste UNA volta sola (`Riferimento`) e può stare davanti a
-// più articoli. Quello che cambia da un articolo all'altro è la DESCRIZIONE: è il
-// cuore della decisione 4 chiusa col cliente — lo stesso film consigliato davanti a
-// un articolo sulla bulimia e a uno sull'ansia va spiegato in due modi diversi,
-// perché parla di quel problema. Per questo la descrizione sta nell'AGGANCIO.
-export type Riferimento = { id: string; kind: "film" | "song"; title: string };
+// Un'opera (film, brano, romanzo…) esiste UNA volta sola (`Riferimento`) e può
+// stare in più articoli. Quello che cambia da un articolo all'altro è la
+// DESCRIZIONE: è il cuore della decisione 4 chiusa col cliente — la stessa opera
+// consigliata in un articolo sulla bulimia e in uno sull'ansia va spiegata in due
+// modi diversi, perché parla di quel problema. Per questo la descrizione sta
+// nell'AGGANCIO. I documenti degli psicologi lo confermano: la stessa canzone
+// torna in schede diverse con spiegazioni diverse.
+export type Riferimento = {
+  id: string;
+  /** slug della tabella `cultural_ref_kinds` */
+  kind: string;
+  /** in corsivo */
+  title: string;
+  /** autore e/o anno, in tondo dopo il titolo: «Greta Gerwig, 2017» */
+  credits: string;
+};
 
 export type Aggancio = {
   cultural_ref_id: string;
@@ -47,10 +80,10 @@ export type Aggancio = {
   sort: number;
 };
 
-export const TIPO_RIFERIMENTO: Record<Riferimento["kind"], string> = {
-  film: "Film",
-  song: "Canzone",
-};
+// I tipi non sono più scritti qui (erano solo Film e Canzone): stanno nella tabella
+// `cultural_ref_kinds`, 18 voci costruite sulle parole degli psicologi. Aggiungerne
+// uno è una riga nel database, non una modifica al pannello.
+export type TipoRiferimento = { slug: string; label: string };
 
 /** Esito di un invio del form. `errore: null` = è andata. */
 export type EsitoForm = { errore: string | null };

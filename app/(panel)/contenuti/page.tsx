@@ -1,175 +1,317 @@
 // app/(panel)/contenuti/page.tsx
-// V2 — L'elenco degli articoli, raggruppati per livello.
+// V2 — La GRIGLIA dei contenuti (decisione 26 del 16/09/2026): categoria ×
+// sottocategoria × livello, 120 caselle. Ogni casella è piena o vuota.
+//
+// Sostituisce l'elenco con il bottone «Nuovo articolo». Il motivo: nel modello
+// definitivo ogni casella ospita UN articolo, e il lavoro degli psicologi è vedere
+// cosa manca e cosa è da rivedere — un elenco lo nasconde, una griglia lo mostra.
+// Per scrivere un articolo nuovo si clicca una casella vuota.
+//
 // Server Component: legge come lo psicologo loggato, quindi la RLS decide cosa vede
 // (le bozze solo a chi pubblica).
 
 import Link from "next/link";
 import { requirePublisher } from "./guard";
-import { LIVELLI, type Articolo, type Categoria } from "./content-data";
+import {
+  LIVELLI,
+  eSegnaposto,
+  type Articolo,
+  type Categoria,
+  type Sottocategoria,
+} from "./content-data";
 import { colors, radius, shadow } from "@/lib/panel-theme";
-import { dayTime } from "@/lib/panel-format";
+
+type Casella = Pick<Articolo, "id" | "level" | "subcategory_id" | "title" | "status" | "closing_question">;
+
+// Lo stato che conta per chi guarda la griglia. «Segnaposto» vince su bozza e
+// pubblicato: un segnaposto va riscritto, qualunque cosa dica il suo stato.
+function statoDi(a: Casella) {
+  if (eSegnaposto(a.title)) return STATI.segnaposto;
+  return a.status === "published" ? STATI.pubblicato : STATI.bozza;
+}
+
+const STATI = {
+  pubblicato: { etichetta: "Pubblicato", fg: colors.accentDark, bg: "#dff0ee" },
+  bozza: { etichetta: "Bozza", fg: colors.muted, bg: colors.bg },
+  segnaposto: { etichetta: "Segnaposto", fg: "#8a5a00", bg: "#fdf0d5" },
+};
+
+const domandaDaCompletare = (a: Casella) =>
+  !a.closing_question.trim() || eSegnaposto(a.closing_question);
 
 export default async function ContenutiPage() {
   const { supabase } = await requirePublisher();
 
-  const [catRes, artRes] = await Promise.all([
+  const [catRes, subRes, artRes] = await Promise.all([
+    supabase.from("categories").select("id, slug, label").eq("is_active", true).order("sort"),
     supabase
-      .from("categories")
-      .select("id, slug, label")
+      .from("subcategories")
+      .select("id, category_id, slug, label")
       .eq("is_active", true)
       .order("sort"),
     supabase
       .from("articles")
-      .select("id, level, category_id, title, body, status, updated_at")
-      .order("level")
-      .order("updated_at", { ascending: false }),
+      .select("id, level, subcategory_id, title, status, closing_question"),
   ]);
 
+  // Un errore di lettura non è "griglia vuota": il primo è un guasto, il secondo
+  // non succede più (ci sono 120 articoli). Confonderli farebbe pensare che il
+  // lavoro degli psicologi sia sparito.
+  const errore = catRes.error ?? subRes.error ?? artRes.error;
+  if (errore) {
+    return (
+      <div>
+        <h1 style={styles.h1}>Contenuti</h1>
+        <div style={styles.errorBox}>Non riesco a leggere i contenuti: {errore.message}</div>
+      </div>
+    );
+  }
+
   const categorie = (catRes.data ?? []) as Categoria[];
-  const articoli = (artRes.data ?? []) as Articolo[];
-  const nomeCategoria = new Map(categorie.map((c) => [c.id, c.label]));
+  const sottocategorie = (subRes.data ?? []) as Sottocategoria[];
+  const articoli = (artRes.data ?? []) as Casella[];
+
+  // (sottocategoria, livello) → articolo. È la chiave unica del database: in una
+  // casella ce n'è al massimo uno.
+  const perCasella = new Map(articoli.map((a) => [`${a.subcategory_id}/${a.level}`, a]));
+
+  // I conti in cima: la risposta alla domanda «quanto manca?» senza scorrere 40 righe.
+  const caselle = sottocategorie.length * LIVELLI.length;
+  const conta = {
+    pubblicati: articoli.filter((a) => statoDi(a) === STATI.pubblicato).length,
+    bozze: articoli.filter((a) => statoDi(a) === STATI.bozza).length,
+    segnaposto: articoli.filter((a) => statoDi(a) === STATI.segnaposto).length,
+    domande: articoli.filter((a) => !eSegnaposto(a.title) && domandaDaCompletare(a)).length,
+    vuote: caselle - articoli.length,
+  };
 
   return (
     <div>
-      <div style={styles.headRow}>
-        <div>
-          <h1 style={styles.h1}>Contenuti</h1>
-          <p style={styles.sub}>
-            Gli articoli che i ragazzi leggono nell&apos;app, uno per livello e categoria.
-          </p>
-        </div>
-        <Link href="/contenuti/nuovo" style={styles.nuovo}>
-          Nuovo articolo
-        </Link>
+      <h1 style={styles.h1}>Contenuti</h1>
+      <p style={styles.sub}>
+        Gli articoli che i ragazzi leggono nell&apos;app: uno per ogni sottocategoria e
+        livello. Clicca una casella per aprirla; una casella vuota si apre per scriverci.
+      </p>
+
+      <div style={styles.riepilogo}>
+        <Conto n={conta.pubblicati} testo="pubblicati" stato={STATI.pubblicato} />
+        <Conto n={conta.bozze} testo="in bozza" stato={STATI.bozza} />
+        <Conto n={conta.segnaposto} testo="segnaposto" stato={STATI.segnaposto} />
+        {conta.domande > 0 ? (
+          <Conto n={conta.domande} testo="domande finali da scrivere" stato={STATI.segnaposto} />
+        ) : null}
+        {conta.vuote > 0 ? <Conto n={conta.vuote} testo="caselle vuote" stato={STATI.bozza} /> : null}
+        <span style={styles.totale}>su {caselle} caselle</span>
       </div>
 
-      {/* Un errore di lettura non è "nessun articolo": il primo è un guasto, il
-          secondo è normale il primo giorno. Confonderli farebbe pensare che il
-          lavoro appena salvato sia sparito. */}
-      {artRes.error ? (
-        <div style={styles.errorBox}>
-          Non riesco a leggere gli articoli: {artRes.error.message}
-        </div>
-      ) : articoli.length === 0 ? (
-        <div style={styles.empty}>
-          Ancora nessun articolo. Il primo si scrive da <strong>Nuovo articolo</strong>:
-          nasce come bozza, quindi non lo vede nessuno finché non lo pubblichi.
-        </div>
-      ) : (
-        LIVELLI.map((liv) => {
-          const delLivello = articoli.filter((a) => a.level === liv.value);
-          if (delLivello.length === 0) return null;
+      {/* Indice: 8 categorie per 5 righe sono una pagina lunga. */}
+      <nav style={styles.indice}>
+        {categorie.map((c) => (
+          <a key={c.id} href={`#${c.slug}`} style={styles.voceIndice}>
+            {c.label}
+          </a>
+        ))}
+      </nav>
 
-          return (
-            <section key={liv.value} style={styles.gruppo}>
-              <h2 style={styles.h2}>
-                {liv.label}
-                <span style={styles.h2Nota}>{liv.nota}</span>
-              </h2>
+      {categorie.map((c) => {
+        const righe = sottocategorie.filter((s) => s.category_id === c.id);
+        const pubblicatiQui = righe.reduce(
+          (n, s) =>
+            n +
+            LIVELLI.filter((l) => {
+              const a = perCasella.get(`${s.id}/${l.value}`);
+              return a && statoDi(a) === STATI.pubblicato;
+            }).length,
+          0,
+        );
 
-              <div style={styles.list}>
-                {delLivello.map((a) => {
-                  const pubblicato = a.status === "published";
-                  return (
-                    <Link key={a.id} href={`/contenuti/${a.id}`} style={styles.row}>
-                      <div style={styles.rowLeft}>
-                        <span
-                          style={{
-                            ...styles.stato,
-                            color: pubblicato ? colors.accentDark : colors.muted,
-                            background: pubblicato ? "#dff0ee" : colors.bg,
-                          }}
-                        >
-                          {pubblicato ? "Pubblicato" : "Bozza"}
-                        </span>
-                        <div style={styles.testi}>
-                          <span style={styles.titolo}>{a.title}</span>
-                          <span style={styles.meta}>
-                            {nomeCategoria.get(a.category_id) ?? "categoria non trovata"}
-                            {" · "}
-                            aggiornato {dayTime(a.updated_at)}
-                          </span>
-                        </div>
-                      </div>
-                      <span style={styles.apri}>Apri</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })
-      )}
+        return (
+          <section key={c.id} id={c.slug} style={styles.categoria}>
+            <h2 style={styles.h2}>
+              {c.label}
+              <span style={styles.h2Conto}>
+                {pubblicatiQui} pubblicati su {righe.length * LIVELLI.length}
+              </span>
+            </h2>
+
+            <div style={styles.griglia}>
+              {/* intestazione: i tre livelli */}
+              <div />
+              {LIVELLI.map((l) => (
+                <div key={l.value} style={styles.testaLivello}>
+                  Livello {l.value}
+                  <span style={styles.testaLivelloNota}>{l.breve}</span>
+                </div>
+              ))}
+
+              {righe.map((s) => (
+                <Riga key={s.id} sottocategoria={s} perCasella={perCasella} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
 
+function Conto({ n, testo, stato }: { n: number; testo: string; stato: { fg: string; bg: string } }) {
+  return (
+    <span style={{ ...styles.conto, color: stato.fg, background: stato.bg }}>
+      <strong>{n}</strong> {testo}
+    </span>
+  );
+}
+
+function Riga({
+  sottocategoria,
+  perCasella,
+}: {
+  sottocategoria: Sottocategoria;
+  perCasella: Map<string, Casella>;
+}) {
+  return (
+    <>
+      <div style={styles.nomeSotto}>{sottocategoria.label}</div>
+      {LIVELLI.map((l) => {
+        const a = perCasella.get(`${sottocategoria.id}/${l.value}`);
+
+        if (!a) {
+          return (
+            <Link
+              key={l.value}
+              href={`/contenuti/nuovo?sottocategoria=${sottocategoria.id}&livello=${l.value}`}
+              style={{ ...styles.casella, ...styles.casellaVuota }}
+            >
+              <span style={styles.vuotaTesto}>Vuota</span>
+              <span style={styles.vuotaAzione}>Scrivi l&apos;articolo</span>
+            </Link>
+          );
+        }
+
+        const stato = statoDi(a);
+        return (
+          <Link key={l.value} href={`/contenuti/${a.id}`} style={styles.casella}>
+            <span style={{ ...styles.stato, color: stato.fg, background: stato.bg }}>
+              {stato.etichetta}
+            </span>
+            <span style={styles.titolo}>{a.title}</span>
+            {stato !== STATI.segnaposto && domandaDaCompletare(a) ? (
+              <span style={styles.manca}>Manca la domanda finale</span>
+            ) : null}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
 const styles: Record<string, React.CSSProperties> = {
-  headRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "1rem",
-    marginBottom: "1.25rem",
-  },
   h1: { margin: 0, fontSize: "1.4rem", fontWeight: 800, color: colors.title },
-  sub: { margin: "0.3rem 0 0", fontSize: "0.9rem", color: colors.muted },
-  nuovo: {
-    padding: "0.6rem 1.1rem",
-    borderRadius: radius.control,
-    background: colors.accent,
-    color: "#fff",
-    fontSize: "0.92rem",
-    fontWeight: 700,
-    textDecoration: "none",
-    whiteSpace: "nowrap",
+  sub: { margin: "0.3rem 0 1rem", fontSize: "0.9rem", color: colors.muted, lineHeight: 1.5 },
+  riepilogo: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: "0.9rem" },
+  conto: { fontSize: "0.82rem", padding: "0.3rem 0.65rem", borderRadius: radius.pill },
+  totale: { fontSize: "0.82rem", color: colors.muted },
+  indice: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: "1.5rem",
+    paddingBottom: "1rem",
+    borderBottom: `1px solid ${colors.border}`,
   },
-  gruppo: { marginBottom: "1.75rem" },
+  voceIndice: {
+    fontSize: "0.82rem",
+    fontWeight: 700,
+    color: colors.accentDark,
+    textDecoration: "none",
+    padding: "0.3rem 0.6rem",
+    borderRadius: radius.control,
+    background: colors.surface,
+    border: `1px solid ${colors.border}`,
+  },
+  categoria: { marginBottom: "2rem", scrollMarginTop: "1rem" },
   h2: {
     margin: "0 0 0.7rem",
-    fontSize: "1rem",
+    fontSize: "1.05rem",
     fontWeight: 800,
     color: colors.title,
     display: "flex",
+    alignItems: "baseline",
+    gap: "0.6rem",
+  },
+  h2Conto: { fontSize: "0.78rem", fontWeight: 500, color: colors.muted },
+  griglia: {
+    display: "grid",
+    gridTemplateColumns: "190px repeat(3, minmax(0, 1fr))",
+    gap: 8,
+    alignItems: "stretch",
+  },
+  testaLivello: {
+    fontSize: "0.78rem",
+    fontWeight: 800,
+    color: colors.title,
+    padding: "0 0.2rem",
+    display: "flex",
     flexDirection: "column",
   },
-  h2Nota: { fontSize: "0.78rem", fontWeight: 500, color: colors.muted, marginTop: 2 },
-  list: { display: "flex", flexDirection: "column", gap: 10 },
-  row: {
+  testaLivelloNota: { fontWeight: 500, color: colors.muted },
+  nomeSotto: {
+    fontSize: "0.86rem",
+    fontWeight: 700,
+    color: colors.text,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: "1rem",
+    paddingRight: "0.4rem",
+    lineHeight: 1.3,
+  },
+  casella: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    padding: "0.65rem 0.75rem",
+    minHeight: 88,
     background: colors.surface,
     border: `1px solid ${colors.border}`,
-    borderRadius: radius.card,
+    borderRadius: radius.control + 2,
     boxShadow: shadow,
-    padding: "0.9rem 1.15rem",
     textDecoration: "none",
     color: "inherit",
+    minWidth: 0,
   },
-  rowLeft: { display: "flex", alignItems: "center", gap: "1rem", minWidth: 0 },
+  casellaVuota: {
+    background: "transparent",
+    border: `1px dashed ${colors.btnBorder}`,
+    boxShadow: "none",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+  },
+  vuotaTesto: { fontSize: "0.82rem", color: colors.muted },
+  vuotaAzione: { fontSize: "0.82rem", fontWeight: 700, color: colors.accentDark },
   stato: {
-    fontSize: "0.72rem",
+    alignSelf: "flex-start",
+    fontSize: "0.68rem",
     fontWeight: 700,
-    padding: "0.3rem 0.6rem",
+    padding: "0.2rem 0.5rem",
     borderRadius: radius.pill,
     whiteSpace: "nowrap",
   },
-  testi: { display: "flex", flexDirection: "column", minWidth: 0 },
-  titolo: { fontSize: "0.95rem", fontWeight: 700, color: colors.title },
-  meta: { fontSize: "0.8rem", color: colors.muted },
-  apri: { fontSize: "0.85rem", fontWeight: 700, color: colors.accentDark, whiteSpace: "nowrap" },
-  empty: {
-    padding: "2.5rem 1.5rem",
-    textAlign: "center",
-    color: colors.muted,
-    background: colors.surface,
-    border: `1px dashed ${colors.border}`,
-    borderRadius: radius.card,
-    fontSize: "0.95rem",
+  // Il titolo si ferma a tre righe: la casella deve restare leggibile a colpo
+  // d'occhio, e il titolo intero è a un clic.
+  titolo: {
+    fontSize: "0.84rem",
+    fontWeight: 600,
+    color: colors.title,
+    lineHeight: 1.35,
+    display: "-webkit-box",
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
+  manca: { fontSize: "0.72rem", fontWeight: 700, color: "#9a6b00" },
   errorBox: {
+    marginTop: "1rem",
     padding: "1rem 1.25rem",
     background: "#fdecea",
     border: "1px solid #f3c2bc",
