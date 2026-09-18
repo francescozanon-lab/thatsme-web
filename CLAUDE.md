@@ -161,11 +161,14 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   **📥 16/09/2026 — contenuti veri arrivati e flusso definitivo** (solo allineamento, nessun codice).
   **Domande guidate ELIMINATE** dagli psicologi → l'editor ad albero **non si fa**. Il modello è
   **8 categorie** (l'ottava «Placeholder») × **5 sottocategorie** × 3 livelli = **120 articoli, uno per
-  casella**. Per questo repo significa: **griglia di 120 caselle al posto del bottone «Nuovo articolo»**
-  (il database rifiuterà i doppioni), articoli agganciati alla sottocategoria, campo «Una domanda per te…»,
-  tipi di riferimento oltre film/canzone + autore/anno. Prima servono la **migrazione V2-bis** e l'**import
-  dai PDF** (lato `thatsme-app`). Decisioni 14–27 e sequenza in `thatsme-app/progress.md`, sezione
-  **0-quinquies**. ⚠️ Maurizio ha **un altro quesito** da porre prima di ripartire.
+  casella**. ✅ **Fatto e provato a video il 18/09/2026:** `contenuti/page.tsx` è la **griglia di 120
+  caselle** (il bottone «Nuovo articolo» non c'è più: un articolo nasce solo da una casella vuota,
+  `nuovo/page.tsx?sottocategoria=&livello=`), la posizione di un articolo non si cambia, campo «Una domanda
+  per te…» (`closing_question`), **18 tipi di riferimento letti dalla tabella `cultural_ref_kinds`** (non
+  più scritti nel codice), titolo in corsivo + `credits` in tondo. Migrazione e import dei 120 articoli
+  stanno lato `thatsme-app/db/`. Decisioni 14–27 in `thatsme-app/progress.md`, sezione **0-quinquies**.
+  ⚠️ Pubblicare è ancora **un articolo alla volta**; un «pubblica tutta la categoria» è una proposta aperta.
+  ⚠️ Maurizio ha un quesito sulla **veste grafica** ancora da porre.
   **Ruoli:** il "psicologo - pubblicatore" è una **capacità** (`can_publish`), non un ruolo nuovo → il
   modulo contenuti si mostra o si nasconde in base a quella, e nulla di esistente cambia comportamento.
 - **P0.4 (deploy su Vercel) sale di priorità:** al Checkpoint CMS gli psicologi devono entrare nel pannello
