@@ -42,7 +42,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - **`thatsme_due_scalette.md`** = **roadmap** (PARTE A prototipo, PARTE B produzione, 🔀 VARIAZIONE V1–V7).
   Dice *cosa* e *in che ordine*; lo *stato* (a che punto) sta in `progress.md`.
 - ⚠️ **Entrambi vivono in `thatsme-app`.** Da questo repo non sono leggibili: se il task lo richiede, apri
-  Claude Code sulla cartella che contiene **entrambi** i repo (`C:\Users\Maurizio\Progetti`).
+  Claude Code sulla cartella che contiene **entrambi** i repo (`C:\Users\Francesco\Progetti`).
 - **A fine sessione:** aggiorna `progress.md` (stato + prossimo passo + nuove gotcha) e committa.
 
 ## Stack & repo
@@ -168,7 +168,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   più scritti nel codice), titolo in corsivo + `credits` in tondo. Migrazione e import dei 120 articoli
   stanno lato `thatsme-app/db/`. Decisioni 14–27 in `thatsme-app/progress.md`, sezione **0-quinquies**.
   ⚠️ Pubblicare è ancora **un articolo alla volta**; un «pubblica tutta la categoria» è una proposta aperta.
-  ⚠️ Maurizio ha un quesito sulla **veste grafica** ancora da porre.
+  ⚠️ Francesco ha un quesito sulla **veste grafica** ancora da porre.
   **Ruoli:** il "psicologo - pubblicatore" è una **capacità** (`can_publish`), non un ruolo nuovo → il
   modulo contenuti si mostra o si nasconde in base a quella, e nulla di esistente cambia comportamento.
 - **P0.4 (deploy su Vercel) sale di priorità:** al Checkpoint CMS gli psicologi devono entrare nel pannello
@@ -177,6 +177,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - In parallelo, **binario legale** F1→F2→F3.5 = cancello per **B2** (ragazzi veri).
 
 ## Come lavorare con me (workflow)
+- **Chi c'è dall'altra parte: Francesco Zanon, l'unico sviluppatore del progetto.** «Maurizio» è solo il
+  nome dell'utente Windows del PC (compare nei percorsi `C:\Users\Maurizio\…`), non una persona del
+  progetto. Fino al 18/09/2026 i documenti lo chiamavano per sbaglio così: corretti.
 - **Rituale a inizio task** (3 domande, da `progress.md`): 1) l'output dello step precedente funziona?
   2) servono account/credenziali nuove? 3) è cambiato qualcosa nel piano? Va dichiarato **prima** di scrivere codice.
 - **Task circoscritti**, uno step alla volta (es. solo P3.5), non «finisci il progetto».
