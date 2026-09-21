@@ -3,29 +3,24 @@
 // Server Component: legge come lo psicologo loggato (RLS). Rotta = "/".
 
 import { createClient } from "@/lib/supabase/server";
-import {
-  colors,
-  radius,
-  shadow,
-  CATEGORY,
-  type CategoryKey,
-} from "@/lib/panel-theme";
+import { colors, radius, shadow } from "@/lib/panel-theme";
 import { hhmm, sinceLabel } from "@/lib/panel-format";
 import TakeChargeButton from "./TakeChargeButton";
 import RefreshButton from "./RefreshButton";
+import { Provenienza, SELECT_PROVENIENZA, type ProvenienzaDati } from "./Provenienza";
 
-type Req = { id: string; category: CategoryKey; created_at: string };
+type Req = { id: string; created_at: string } & ProvenienzaDati;
 
 export default async function CasiInArrivoPage() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("contact_requests")
-    .select("id, category, created_at")
+    .select(`id, created_at, ${SELECT_PROVENIENZA}`)
     .eq("status", "pending")
     .order("created_at", { ascending: true }); // chi aspetta da più tempo, in cima
 
-  const requests = (data ?? []) as Req[];
+  const requests = (data ?? []) as unknown as Req[];
 
   return (
     <div>
@@ -51,19 +46,16 @@ export default async function CasiInArrivoPage() {
       ) : (
         <div style={styles.list}>
           {requests.map((r) => {
-            const cat =
-              CATEGORY[r.category] ?? { label: r.category, fg: colors.muted, bg: colors.bg };
             const time = hhmm(r.created_at);
             return (
               <div key={r.id} style={styles.row}>
                 <div style={styles.rowLeft}>
-                  <span style={{ ...styles.tag, color: cat.fg, background: cat.bg }}>
-                    {cat.label}
-                  </span>
                   <div style={styles.times}>
                     <span style={styles.time}>arrivata alle {time}</span>
                     <span style={styles.waited}>in attesa da {sinceLabel(r.created_at)}</span>
                   </div>
+                  {/* Da dove arriva: stato d'animo + categoria · sottocategoria. */}
+                  <Provenienza dati={r} />
                 </div>
                 <TakeChargeButton requestId={r.id} />
               </div>

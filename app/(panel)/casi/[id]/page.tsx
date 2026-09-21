@@ -7,14 +7,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  colors,
-  radius,
-  shadow,
-  CATEGORY,
-  type CategoryKey,
-} from "@/lib/panel-theme";
+import { colors, radius, shadow } from "@/lib/panel-theme";
 import { hhmm, dayTime } from "@/lib/panel-format";
+import { Provenienza, SELECT_PROVENIENZA, type ProvenienzaDati } from "../../Provenienza";
 import ChatPanel from "./ChatPanel";
 import CaseActions from "./CaseActions";
 import { MSG_COLS, NOTE_STATUS, type Message } from "./case-data";
@@ -33,11 +28,10 @@ type Conversation = {
 };
 
 type Request = {
-  category: CategoryKey;
   status: "pending" | "in_progress" | "resolved";
   created_at: string;
   taken_charge_at: string | null;
-};
+} & ProvenienzaDati;
 
 type Note = { id: string; note: string | null; changed_at: string };
 
@@ -71,7 +65,7 @@ export default async function CasoPage({
   const [reqRes, boyRes, msgRes, notesRes] = await Promise.all([
     supabase
       .from("contact_requests")
-      .select("category, status, created_at, taken_charge_at")
+      .select(`status, created_at, taken_charge_at, ${SELECT_PROVENIENZA}`)
       .eq("id", conv.contact_request_id)
       .maybeSingle<Request>(),
     supabase
@@ -96,10 +90,6 @@ export default async function CasoPage({
   const boy = boyRes.data;
   const messages = (msgRes.data ?? []) as Message[];
   const notes = (notesRes.data ?? []) as Note[];
-
-  const cat = req
-    ? CATEGORY[req.category] ?? { label: req.category, fg: colors.muted, bg: colors.bg }
-    : null;
 
   // Caso chiuso (P3.6) o conversazione archiviata → chat in sola lettura.
   const closed = conv.is_archived || req?.status === "resolved";
@@ -131,11 +121,8 @@ export default async function CasoPage({
         </div>
 
         <div style={styles.badges}>
-          {cat ? (
-            <span style={{ ...styles.tag, color: cat.fg, background: cat.bg }}>
-              {cat.label}
-            </span>
-          ) : null}
+          {/* Da dove arriva (V6): stato d'animo + categoria · sottocategoria. */}
+          {req ? <Provenienza dati={req} compatta /> : null}
           <span
             style={{
               ...styles.tag,

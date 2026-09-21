@@ -11,23 +11,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  colors,
-  radius,
-  shadow,
-  CATEGORY,
-  type CategoryKey,
-} from "@/lib/panel-theme";
+import { colors, radius, shadow } from "@/lib/panel-theme";
 import { hhmm, sinceLabel } from "@/lib/panel-format";
 import RefreshButton from "../RefreshButton";
+import { Provenienza, SELECT_PROVENIENZA, type ProvenienzaDati } from "../Provenienza";
 
 type Req = {
-  category: CategoryKey;
   status: "pending" | "in_progress" | "resolved";
   created_at: string;
   taken_charge_at: string | null;
   resolved_at: string | null;
-};
+} & ProvenienzaDati;
 
 type Profile = { display_name: string | null; avatar_emoji: string | null };
 
@@ -76,7 +70,7 @@ export default async function MieiCasiPage() {
     .from("conversations")
     .select(
       "id, is_archived, created_at, contact_request_id, " +
-        "contact_requests(category, status, created_at, taken_charge_at, resolved_at), " +
+        `contact_requests(status, created_at, taken_charge_at, resolved_at, ${SELECT_PROVENIENZA}), ` +
         "profiles(display_name, avatar_emoji)",
     )
     .eq("professional_id", user.id)
@@ -222,14 +216,6 @@ function Section({
 }
 
 function CaseRow({ c, highlight }: { c: Case; highlight: boolean }) {
-  const cat = c.req
-    ? CATEGORY[c.req.category] ?? {
-        label: c.req.category,
-        fg: colors.muted,
-        bg: colors.bg,
-      }
-    : null;
-
   const preview = c.last
     ? `${c.last.sender_type === "professional" ? "Tu: " : ""}${c.last.content}`
     : "Nessun messaggio: il primo lo scrivi tu.";
@@ -244,11 +230,8 @@ function CaseRow({ c, highlight }: { c: Case; highlight: boolean }) {
       <div style={styles.center}>
         <div style={styles.nameLine}>
           <span style={styles.name}>{c.name}</span>
-          {cat ? (
-            <span style={{ ...styles.tag, color: cat.fg, background: cat.bg }}>
-              {cat.label}
-            </span>
-          ) : null}
+          {/* Da dove arriva (V6): stato d'animo + categoria · sottocategoria. */}
+          {c.req ? <Provenienza dati={c.req} compatta /> : null}
         </div>
         <div
           style={{
