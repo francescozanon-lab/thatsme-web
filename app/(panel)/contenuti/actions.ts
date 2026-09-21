@@ -17,7 +17,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requirePublisher } from "./guard";
-import { UUID_RE, type EsitoForm } from "./content-data";
+import { SEGNAPOSTO, UUID_RE, type EsitoForm } from "./content-data";
 
 // ------------------------------------------------------------
 // Perché più bottoni condividono UNA sola azione
@@ -148,6 +148,45 @@ export async function salvaArticolo(
 
   revalidatePath("/contenuti");
   revalidatePath(`/contenuti/${id}`);
+  return { errore: null };
+}
+
+// ------------------------------------------------------------
+// PUBBLICA TUTTE LE BOZZE DI UNA CATEGORIA
+// ------------------------------------------------------------
+// Con 120 caselle, pubblicare una per una sono 120 clic: il tipo di lavoro che si
+// interrompe a metà, lasciando l'app con dei buchi che nessuno sa spiegare.
+//
+// ⚠️ I SEGNAPOSTO RESTANO FUORI, sempre. L'ottava categoria e le parti ancora da
+// scrivere cominciano tutte con «PLACEHOLDER» (decisione 24): un bottone che pubblica
+// «in blocco» è esattamente il modo in cui un testo finto finirebbe davanti a un
+// ragazzo. Il filtro sta QUI, nel server, non nella pagina che disegna il bottone.
+export async function pubblicaCategoria(
+  categoryId: string,
+  _prev: EsitoForm,
+  _formData: FormData,
+): Promise<EsitoForm> {
+  const { supabase } = await requirePublisher();
+
+  if (!UUID_RE.test(categoryId)) return { errore: "Categoria non riconosciuta." };
+
+  const { data, error } = await supabase
+    .from("articles")
+    .update({ status: "published", updated_at: new Date().toISOString() })
+    .eq("category_id", categoryId)
+    .eq("status", "draft")
+    .not("title", "like", `${SEGNAPOSTO}%`)
+    .select("id");
+
+  if (error) return { errore: `Non sono riuscito a pubblicare: ${error.message}` };
+
+  // Zero righe senza errore: non è un guasto, è che non c'era niente da pubblicare
+  // (magari un collega ha fatto la stessa cosa un attimo prima).
+  if (!data || data.length === 0) {
+    return { errore: "Non c'era nessuna bozza da pubblicare in questa categoria." };
+  }
+
+  revalidatePath("/contenuti");
   return { errore: null };
 }
 

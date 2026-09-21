@@ -20,6 +20,8 @@ import {
   type Sottocategoria,
 } from "./content-data";
 import { colors, radius, shadow } from "@/lib/panel-theme";
+import { pubblicaCategoria } from "./actions";
+import PubblicaCategoria from "./PubblicaCategoria";
 
 type Casella = Pick<Articolo, "id" | "level" | "subcategory_id" | "title" | "status" | "closing_question">;
 
@@ -115,24 +117,25 @@ export default async function ContenutiPage() {
 
       {categorie.map((c) => {
         const righe = sottocategorie.filter((s) => s.category_id === c.id);
-        const pubblicatiQui = righe.reduce(
-          (n, s) =>
-            n +
-            LIVELLI.filter((l) => {
-              const a = perCasella.get(`${s.id}/${l.value}`);
-              return a && statoDi(a) === STATI.pubblicato;
-            }).length,
-          0,
+        const quiDentro = righe.flatMap((s) =>
+          LIVELLI.map((l) => perCasella.get(`${s.id}/${l.value}`)).filter(Boolean) as Casella[],
         );
+        const pubblicatiQui = quiDentro.filter((a) => statoDi(a) === STATI.pubblicato).length;
+        // I segnaposto non si pubblicano in blocco (e nemmeno si contano qui): il
+        // filtro vero è nell'azione sul server, questo è solo ciò che il bottone dice.
+        const bozzeVere = quiDentro.filter((a) => statoDi(a) === STATI.bozza).length;
 
         return (
           <section key={c.id} id={c.slug} style={styles.categoria}>
-            <h2 style={styles.h2}>
-              {c.label}
-              <span style={styles.h2Conto}>
-                {pubblicatiQui} pubblicati su {righe.length * LIVELLI.length}
-              </span>
-            </h2>
+            <div style={styles.h2Riga}>
+              <h2 style={styles.h2}>
+                {c.label}
+                <span style={styles.h2Conto}>
+                  {pubblicatiQui} pubblicati su {righe.length * LIVELLI.length}
+                </span>
+              </h2>
+              <PubblicaCategoria quante={bozzeVere} azione={pubblicaCategoria.bind(null, c.id)} />
+            </div>
 
             <div style={styles.griglia}>
               {/* intestazione: i tre livelli */}
@@ -231,8 +234,16 @@ const styles: Record<string, React.CSSProperties> = {
     border: `1px solid ${colors.border}`,
   },
   categoria: { marginBottom: "2rem", scrollMarginTop: "1rem" },
+  h2Riga: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: "1rem",
+    flexWrap: "wrap",
+    marginBottom: "0.7rem",
+  },
   h2: {
-    margin: "0 0 0.7rem",
+    margin: 0,
     fontSize: "1.05rem",
     fontWeight: 800,
     color: colors.title,
