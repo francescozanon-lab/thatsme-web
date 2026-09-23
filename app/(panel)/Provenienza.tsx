@@ -10,15 +10,18 @@
 // «Famiglia · Autonomia e regole» dopo aver detto che è andata male. È un punto di
 // partenza, e gli risparmia la prima domanda a vuoto.
 
-import { CATEGORY, colors, radius, type CategoryKey } from "@/lib/panel-theme";
+import { colors, radius } from "@/lib/panel-theme";
 
 /** I campi che servono: si leggono con un `select` che incrocia le due tabelle. */
 type Etichetta = { label: string };
 
+// Le richieste di prima del modello a 3 livelli non hanno né livello né
+// sottocategoria: arrivano agganciate a una delle tre categorie «storiche»
+// (`Vita (storica)`, `Scuola (storica)`, `Amore (storica)`), disattivate per l'app ma
+// leggibili dagli psicologi. La vecchia categoria-parola (life/school/love), con il
+// suo ripiego qui dentro, è stata tolta da `thatsme-app/db/v1_cleanup.sql`.
 export type ProvenienzaDati = {
   level: number | null;
-  /** La parola vecchia (life/school/love): solo le richieste di prima del 19/09/2026. */
-  category: string | null;
   // ⚠️ PostgREST restituisce le relazioni "to-one" come oggetto, ma a seconda di come
   // riconosce il vincolo può darle come array di uno (qui il rimando è DOPPIO, su due
   // colonne). Si accettano entrambe le forme, come già fa la pagina dei casi.
@@ -36,24 +39,14 @@ const STATO: Record<number, { label: string; fg: string; bg: string }> = {
   3: { label: "È andata male", fg: colors.love, bg: colors.loveBg },
 };
 
-export const SELECT_PROVENIENZA = "level, category, categories(label), subcategories(label)";
+export const SELECT_PROVENIENZA = "level, categories(label), subcategories(label)";
 
 export function Provenienza({ dati, compatta }: { dati: ProvenienzaDati; compatta?: boolean }) {
   const stato = dati.level ? STATO[dati.level] : null;
   const categoria = uno(dati.categories);
   const sottocategoria = uno(dati.subcategories);
 
-  // Richieste vecchie: nessun livello e la categoria come parola. Si mostra quella,
-  // invece di far sparire l'informazione che c'è.
-  if (!stato && !categoria) {
-    const vecchia = dati.category ? CATEGORY[dati.category as CategoryKey] : null;
-    if (!vecchia && !dati.category) return null;
-    return (
-      <span style={{ ...styles.pill, color: vecchia?.fg ?? colors.muted, background: vecchia?.bg ?? colors.bg }}>
-        {vecchia?.label ?? dati.category}
-      </span>
-    );
-  }
+  if (!stato && !categoria) return null;
 
   return (
     <span style={{ ...styles.riga, ...(compatta ? styles.rigaCompatta : null) }}>
