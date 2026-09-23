@@ -2,7 +2,7 @@
 
 > **⚠️ COPIA SINCRONIZZATA.** L'originale vive in **`thatsme-app/CLAUDE.md`**: se modifichi uno dei due,
 > allinea l'altro (i repo sono separati su GitHub, quindi un rimando al file dell'altra cartella qui non
-> funzionerebbe). Allineata il **16/09/2026**.
+> funzionerebbe). Allineata il **23/09/2026**.
 
 > **File di contesto per Claude Code.** Va alla **radice del repo** in cui apri Claude Code. Ci sono **due
 > repo** (`thatsme-app`, `thatsme-web`): tieni una copia di questo file alla radice di **ciascuno**. I due
@@ -33,8 +33,14 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   `42501 permission denied` e la notifica muore in silenzio. Le funzioni `SECURITY DEFINER` non hanno il
   problema (basta il `grant execute`). Questo errore è già costato due debug: P1.2 su `authenticated`,
   27/07/2026 su `service_role`. Restare **stretti**: mai `grant all … to service_role`.
-- **Binario legale = fuori perimetro.** DPIA, consensi art. 9 GDPR, protocollo emergenza (F1/F2/F3.5) sono di
-  avvocato + team clinico. Tu acceleri il **binario tecnico**, non quello legale.
+- **Binario legale = fuori perimetro.** DPIA, consensi art. 9 GDPR, privacy e documenti (F1/F2) sono del
+  **cliente con i suoi legali**. Tu acceleri il **binario tecnico**, non quello legale — ma i fatti tecnici
+  li fornisci tu: `thatsme-app/documenti/ThatsMe_allegato_tecnico_dati.docx` (dati, chi li vede, fornitori,
+  dove stanno).
+- **L'app NON gestisce emergenze** (decisione 30, 22/09/2026): niente escalation, niente reperibilità, F3.5
+  tolto. **Resta** la schermata coi numeri di ascolto (lato app), che indica chi le gestisce.
+- **Minimizzazione:** non si salva ciò che non serve. Esempio già applicato: il nome del telefono non si
+  salva più (`thatsme-app/db/v8_senza_nome_telefono.sql`), perché su Android può contenere il nome vero.
 
 ## Come sono organizzati i documenti
 - **`progress.md`** = fonte di verità sullo **STATO** (dove siamo, dettaglio file-per-file, decisioni, gotcha).
@@ -88,7 +94,13 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - **Auth pilota = telefono + SMS 6 cifre** (decisione committente); **ora si resta a email-OTP**. Lo swap
   email→SMS è **isolato in `src/lib/otp.ts`** (lato app): si cambia solo quel file (+ provider SMS su Supabase).
 - **Resend in modalità test** consegna **solo a `francesco.zanon99@gmail.com`** → blocca ogni altro tester
-  finché non si verifica il dominio `thats-me.it` (passo «Distribuzione»).
+  finché non si verifica il dominio `thats-me.it` (passo «Distribuzione»). ⚠️ Vale **anche per i codici
+  d'accesso** dell'app (SMTP custom di Supabase = Resend).
+- ⚠️⚠️ **Deploy di QUESTO repo su Vercel: regione Francoforte (`fra1`).** `casi/[id]/page.tsx` legge i
+  messaggi **lato server**: con la regione predefinita (USA) i testi delle chat transiterebbero fuori
+  dall'UE, pur essendo conservati a Francoforte. Si imposta al primo deploy, ed è la cosa che si dimentica.
+- **Ore nel SQL Editor di Supabase = UTC** (`+00`): 15:04 lì sono le 17:04 italiane d'estate. Non è un
+  errore: il pannello converte da solo (`lib/panel-format.ts`, fuso `Europe/Rome`).
 - **Push: niente Expo Go.** Dall'SDK 53 le push remote sono state rimosse da Expo Go → si provano solo con un
   **development build EAS** (+ Firebase/FCM su Android). In Expo Go `registerPushToken` risponde
   `unsupported` e non registra nulla: è il comportamento voluto, non un bug.
@@ -151,7 +163,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ⚠️ **Riguarda questo repo per una cosa sola:** quando il pannello sarà su Vercel, il secret `PANEL_URL`
   vale il doppio di prima — l'email allo psicologo contiene il **link diretto al caso**
   (`PANEL_URL/casi/<conversationId>`), che senza quel secret sparisce. Da fare al deploy (P0.4).
-- ▶️ **LAVORO IN CORSO = 🔀 VARIAZIONE (modello a 3 livelli), decisa PRIMA di B1 il 29/07/2026.**
+- ✅ **🔀 VARIAZIONE (modello a 3 livelli) — COMPLETA** (decisa il 29/07/2026, chiusa il 21-22/09/2026). Lato
+  pannello: griglia dei 120 articoli, **«Pubblica le bozze» per categoria** (segnaposto esclusi **sul
+  server**), provenienza dei casi (`Provenienza.tsx`) e sticky. *Storia della variazione:*
   Non si dà a psicologi e tester adulti un'app che poi cambia nel flusso e nel pannello.
   ⚠️ **Questo repo è il primo a muoversi dopo lo schema:** **V2 = modulo contenuti (CMS-lite)** — editor
   articoli ✅ e riferimenti culturali ✅ (M:N con descrizione per aggancio), fatti e provati il 29/07/2026.
@@ -167,14 +181,22 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   per te…» (`closing_question`), **18 tipi di riferimento letti dalla tabella `cultural_ref_kinds`** (non
   più scritti nel codice), titolo in corsivo + `credits` in tondo. Migrazione e import dei 120 articoli
   stanno lato `thatsme-app/db/`. Decisioni 14–27 in `thatsme-app/progress.md`, sezione **0-quinquies**.
-  ⚠️ Pubblicare è ancora **un articolo alla volta**; un «pubblica tutta la categoria» è una proposta aperta.
-  ⚠️ Francesco ha un quesito sulla **veste grafica** ancora da porre.
+  ✅ ~~Pubblicare un articolo alla volta~~ → **«Pubblica le bozze» per categoria** fatto il 21/09/2026
+  (`contenuti/PubblicaCategoria.tsx` + `pubblicaCategoria()` in `contenuti/actions.ts`).
+  ✅ Il quesito di Francesco sulla **veste grafica** è stato risolto il 19/09/2026 (riguardava l'app).
   **Ruoli:** il "psicologo - pubblicatore" è una **capacità** (`can_publish`), non un ruolo nuovo → il
   modulo contenuti si mostra o si nasconde in base a quella, e nulla di esistente cambia comportamento.
-- **P0.4 (deploy su Vercel) sale di priorità:** al Checkpoint CMS gli psicologi devono entrare nel pannello
-  **da casa loro**. Poi il secret `PANEL_URL`. B1 non si consegna finché la variazione non è in piedi, ma
-  la distribuzione si **prepara** in parallelo.
-- In parallelo, **binario legale** F1→F2→F3.5 = cancello per **B2** (ragazzi veri).
+- ▶️ **PROSSIMO: pilota con 100 ragazzi delle scuole, dicembre 2026** (partenza indicativa 7/12), via
+  TestFlight + test chiuso Play (non store pubblici). Calendario in `thatsme-app/thatsme_due_scalette.md`,
+  sezione **«Scaletta operativa fino al pilota di dicembre»**. **Per questo repo il primo passo è P0.4:**
+  deploy su Vercel appena il cliente apre l'account (⚠️ regione `fra1`, vedi sopra), poi il secret
+  `PANEL_URL`. Serve alla **prova chiusa B1** e al **Checkpoint CMS** (psicologi che correggono i testi da
+  casa).
+- ⚠️ Quando si scriverà `thatsme-app/db/v1_cleanup.sql` (toglie il modello vecchio): **`Provenienza.tsx`
+  ripiega ancora sulla categoria-parola** per le richieste di prima → va semplificato nello stesso giro, o
+  il pannello si rompe al Run.
+- In parallelo, **binario legale** F1→F2 (~~F3.5~~ tolto) = cancello per **B2** (ragazzi veri), in mano al
+  cliente. Decisioni 28-31 (22-23/09/2026) in `thatsme-app/progress.md`.
 
 ## Come lavorare con me (workflow)
 - **Chi c'è dall'altra parte: Francesco Zanon, l'unico sviluppatore del progetto.** «Maurizio» è solo il
@@ -196,7 +218,8 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   — vedi le note P1.4 in `progress.md`).
 - **App (`thatsme-app`):** `npx expo start -c` (dev, cache pulita) · `npx expo start --dev-client` (con il
   development build sul telefono) · `npx tsc --noEmit` (typecheck) · `npx expo install <pkg>`.
-  Build: **EAS** (Android = via più rapida da Windows; iOS/TestFlight richiede Apple Developer €99).
+  Build: **EAS**, anche per iPhone da Windows (compila nel cloud, niente Mac). Account Apple e Google **del
+  cliente**, già aperti: Francesco ci entra per invito.
 
 ---
 *Riassunto operativo. La verità di dettaglio vive in `progress.md` e `thatsme_due_scalette.md`, entrambi in `thatsme-app`.*
