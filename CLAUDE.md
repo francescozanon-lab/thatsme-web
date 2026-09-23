@@ -192,7 +192,7 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   deploy su Vercel appena il cliente apre l'account (⚠️ regione `fra1`, vedi sopra), poi il secret
   `PANEL_URL`. Serve alla **prova chiusa B1** e al **Checkpoint CMS** (psicologi che correggono i testi da
   casa).
-- ✅ `thatsme-app/db/v1_cleanup.sql` (scritta il 23/09/2026) toglie la categoria-parola da
+- ✅ `thatsme-app/db/v1_cleanup.sql` (**applicata e provata il 23/09/2026**) ha tolto la categoria-parola da
   `contact_requests`: `Provenienza.tsx` è già stato semplificato (niente più `category` nel select né
   ripiego, `CATEGORY` tolta da `lib/panel-theme.ts`). Le richieste di luglio si leggono tramite le 3
   categorie «storiche» disattivate: **non cancellarle**, sono la loro etichetta.
