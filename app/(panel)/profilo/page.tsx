@@ -3,6 +3,7 @@
 // dalla RPC `get_my_stats` (db/get_my_stats.sql), non da una tabella dedicata.
 // Server Component: legge come lo psicologo loggato.
 
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { colors, radius, shadow } from "@/lib/panel-theme";
@@ -63,6 +64,9 @@ export default async function ProfiloPage() {
             <div style={styles.since}>Nel team dal {dateLong(pro.created_at)}</div>
           ) : null}
           <div style={styles.email}>{user.email}</div>
+          <Link href="/profilo/password" style={styles.pwdLink}>
+            Cambia password
+          </Link>
         </div>
       </section>
 
@@ -158,6 +162,14 @@ const styles: Record<string, React.CSSProperties> = {
   role: { marginTop: 2, fontSize: "0.85rem", fontWeight: 700, color: colors.accentDark },
   since: { marginTop: 4, fontSize: "0.82rem", color: colors.muted },
   email: { marginTop: 1, fontSize: "0.82rem", color: colors.muted },
+  pwdLink: {
+    display: "inline-block",
+    marginTop: 8,
+    fontSize: "0.82rem",
+    fontWeight: 700,
+    color: colors.accentDark,
+    textDecoration: "none",
+  },
 
   h2: { margin: "0.25rem 0 0", fontSize: "1.05rem", fontWeight: 800, color: colors.title },
 

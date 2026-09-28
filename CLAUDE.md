@@ -2,7 +2,7 @@
 
 > **⚠️ COPIA SINCRONIZZATA.** L'originale vive in **`thatsme-app/CLAUDE.md`**: se modifichi uno dei due,
 > allinea l'altro (i repo sono separati su GitHub, quindi un rimando al file dell'altra cartella qui non
-> funzionerebbe). Allineata il **23/09/2026**.
+> funzionerebbe). Allineata il **28/09/2026**.
 
 > **File di contesto per Claude Code.** Va alla **radice del repo** in cui apri Claude Code. Ci sono **due
 > repo** (`thatsme-app`, `thatsme-web`): tieni una copia di questo file alla radice di **ciascuno**. I due
@@ -99,6 +99,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - ⚠️⚠️ **Deploy di QUESTO repo su Vercel: regione Francoforte (`fra1`).** `casi/[id]/page.tsx` legge i
   messaggi **lato server**: con la regione predefinita (USA) i testi delle chat transiterebbero fuori
   dall'UE, pur essendo conservati a Francoforte. Si imposta al primo deploy, ed è la cosa che si dimentica.
+- ⚠️ **Deploy di QUESTO repo: aggiungere `https://<pannello>/login/conferma` ai «Redirect URLs» di
+  Supabase** (`thatsme-app/supabase/README.md`, sezione I). Senza, «Primo accesso o password dimenticata?»
+  manda email con un link che porta nel posto sbagliato, e nessuno psicologo riesce a scegliersi la password.
 - **Ore nel SQL Editor di Supabase = UTC** (`+00`): 15:04 lì sono le 17:04 italiane d'estate. Non è un
   errore: il pannello converte da solo (`lib/panel-format.ts`, fuso `Europe/Rome`).
 - **Push: niente Expo Go.** Dall'SDK 53 le push remote sono state rimosse da Expo Go → si provano solo con un
@@ -196,6 +199,13 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   `contact_requests`: `Provenienza.tsx` è già stato semplificato (niente più `category` nel select né
   ripiego, `CATEGORY` tolta da `lib/panel-theme.ts`). Le richieste di luglio si leggono tramite le 3
   categorie «storiche» disattivate: **non cancellarle**, sono la loro etichetta.
+- ✍️ **28/09/2026 — password degli psicologi** (voce 1 della scaletta), **in questo repo**: «Primo accesso
+  o password dimenticata?» (`app/login/password`), pagina del link con «Continua» (`app/login/conferma`, un
+  POST apposta: i filtri antispam che aprono i link non lo consumano), «Scegli la password» dietro il gate
+  (`app/(panel)/profilo/password`) + «Cambia password» nel profilo. Stili delle pagine d'accesso condivisi
+  in `app/login/auth-styles.ts` + `AuthCard.tsx`. Account nuovi con `thatsme-app/db/add_professional.sql`
+  (da applicare). `tsc`/lint/build verdi; **da attivare** nel dashboard (`thatsme-app/supabase/README.md`,
+  sezione I) e da provare.
 - In parallelo, **binario legale** F1→F2 (~~F3.5~~ tolto) = cancello per **B2** (ragazzi veri), in mano al
   cliente. Decisioni 28-31 (22-23/09/2026) in `thatsme-app/progress.md`.
 

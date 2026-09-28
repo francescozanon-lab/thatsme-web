@@ -37,6 +37,10 @@ export async function proxy(request: NextRequest)  {
   } = await supabase.auth.getUser();
 
   const isLoginRoute = request.nextUrl.pathname.startsWith("/login");
+  // La pagina del link per la password (arriva per email): deve aprirsi anche se
+  // su questo browser c'è già una sessione, altrimenti il rimbalzo qui sotto la
+  // salterebbe. Confermare il link sostituisce la sessione con quella del link.
+  const isRecoveryRoute = request.nextUrl.pathname.startsWith("/login/conferma");
 
   // Non loggato e fuori da /login -> vai a /login (copiando i cookie freschi).
   if (!user && !isLoginRoute) {
@@ -50,7 +54,7 @@ export async function proxy(request: NextRequest)  {
   }
 
   // Già loggato ma su /login -> vai alla home.
-  if (user && isLoginRoute) {
+  if (user && isLoginRoute && !isRecoveryRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     const redirectResponse = NextResponse.redirect(url);
