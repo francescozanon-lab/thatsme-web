@@ -93,6 +93,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - **OTP a 6 cifre** (impostato su Supabase; fonte di verità = dashboard). `login.tsx` usa `maxLength={6}`.
 - **Auth pilota = telefono + SMS 6 cifre** (decisione committente); **ora si resta a email-OTP**. Lo swap
   email→SMS è **isolato in `src/lib/otp.ts`** (lato app): si cambia solo quel file (+ provider SMS su Supabase).
+  Dal 28/09/2026 lì c'è anche il **ramo del revisore di Apple e Google** (`revisione@thats-me.it`: niente
+  email, le 6 cifre sono la password dell'account; procedura in fondo a `thatsme-app/BUILD.md`). Con gli SMS
+  si toglie: Supabase ha già i «numeri di prova» con codice fisso.
 - **Resend in modalità test** consegna **solo a `francesco.zanon99@gmail.com`** → blocca ogni altro tester
   finché non si verifica il dominio `thats-me.it` (passo «Distribuzione»). ⚠️ Vale **anche per i codici
   d'accesso** dell'app (SMTP custom di Supabase = Resend).
