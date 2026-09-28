@@ -96,9 +96,11 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   Dal 28/09/2026 lì c'è anche il **ramo del revisore di Apple e Google** (`revisione@thats-me.it`: niente
   email, le 6 cifre sono la password dell'account; procedura in fondo a `thatsme-app/BUILD.md`). Con gli SMS
   si toglie: Supabase ha già i «numeri di prova» con codice fisso.
-- **Resend in modalità test** consegna **solo a `francesco.zanon99@gmail.com`** → blocca ogni altro tester
-  finché non si verifica il dominio `thats-me.it` (passo «Distribuzione»). ⚠️ Vale **anche per i codici
-  d'accesso** dell'app (SMTP custom di Supabase = Resend).
+- ✅ **Resend: dominio `thats-me.it` VERIFICATO il 28/09/2026** (record DNS su SiteGround, server in
+  Irlanda, niente tracciamento, TLS obbligatorio). I **codici d'accesso** e le email della password degli
+  psicologi (SMTP custom di Supabase = Resend, mittente `notifiche@thats-me.it`) arrivano a chiunque.
+  ⚠️ Le email della funzione `notify` invece vanno **ancora tutte a `francesco.zanon99@gmail.com`** finché
+  nei secrets c'è `NOTIFY_EMAIL_OVERRIDE` (`thatsme-app/supabase/README.md`, sezione G).
 - ⚠️⚠️ **Deploy di QUESTO repo su Vercel: regione Francoforte (`fra1`).** `casi/[id]/page.tsx` legge i
   messaggi **lato server**: con la regione predefinita (USA) i testi delle chat transiterebbero fuori
   dall'UE, pur essendo conservati a Francoforte. Si imposta al primo deploy, ed è la cosa che si dimentica.
@@ -154,8 +156,9 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ragazzo su presa in carico / nuova risposta / commiato. **Non tocca il pannello** — è il motivo per cui è
   stata scelta quell'architettura. File (lato `thatsme-app`): `db/push_tokens.sql`, `db/notify_grants.sql`,
   `db/notify_pool.sql`, `supabase/functions/notify/index.ts`, `src/lib/push.ts`.
-  ⚠️ **Resend è in test:** il secret `NOTIFY_EMAIL_OVERRIDE` dirotta tutte le email del pool sull'unico
-  indirizzo consegnabile; si toglie quando è verificato il dominio **`thats-me.it`** (comprato il 26/07).
+  ⚠️ **Il secret `NOTIFY_EMAIL_OVERRIDE`** dirotta ancora tutte le email del pool su Francesco. Il dominio
+  **`thats-me.it`** è verificato dal 28/09/2026: si toglie col resto della sezione G di
+  `thatsme-app/supabase/README.md`.
   🔐 **Da fare prima del pilota:** rigenerare `NOTIFY_HOOK_SECRET` (transitato in chiaro durante il debug
   del 27/07) — nuovo secret + stesso valore nell'header dei due webhook + **deploy rifatto**.
 - ✅ **P4.3 polish — CHIUSA (A+B+C 27/07, D ed E 28/07, prova end-to-end di E 29/07/2026).**
