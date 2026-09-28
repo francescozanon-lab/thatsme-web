@@ -43,7 +43,9 @@ export async function updatePassword(
     .maybeSingle();
 
   if (!pro) {
-    await supabase.auth.signOut();
+    // Solo questa sessione, come nel layout: non si butta fuori il ragazzo
+    // anche dall'app sul telefono.
+    await supabase.auth.signOut({ scope: "local" });
     redirect("/login?denied=1");
   }
 

@@ -32,7 +32,10 @@ export default async function PanelLayout({
     .maybeSingle();
 
   if (!pro) {
-    await supabase.auth.signOut();
+    // Solo QUESTA sessione (scope local): il default di Supabase è "global", che
+    // butterebbe fuori il ragazzo anche dall'app sul suo telefono. Succedeva a chi
+    // apriva per sbaglio il link della password del pannello (28/09/2026).
+    await supabase.auth.signOut({ scope: "local" });
     redirect("/login?denied=1");
   }
 
