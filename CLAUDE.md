@@ -107,6 +107,14 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   manda email con un link che porta nel posto sbagliato, e nessuno psicologo riesce a scegliersi la password.
 - **Ore nel SQL Editor di Supabase = UTC** (`+00`): 15:04 lì sono le 17:04 italiane d'estate. Non è un
   errore: il pannello converte da solo (`lib/panel-format.ts`, fuso `Europe/Rome`).
+- ⚠️ **SQL Editor di Supabase: con del testo selezionato il bottone diventa «Run selected» ed esegue SOLO la
+  selezione.** Il 28/09/2026 ha eseguito solo le 6 cifre appena scritte dentro una query (errore di
+  sintassi, password mai cambiata). Con una migrazione è peggio: ne applicherebbe un pezzo. Prima di Run,
+  clic in fondo al testo; e dove si può, `returning` per vedere che cosa è cambiato davvero.
+- **`signOut()` di Supabase è «global» per default:** chiude la sessione su **tutti** i dispositivi
+  dell'utente. Nel gate di QUESTO repo (`(panel)/layout.tsx`, `profilo/actions.ts`) si usa
+  `{ scope: 'local' }` (28/09/2026), altrimenti un ragazzo respinto dal pannello viene buttato fuori anche
+  dall'app sul telefono. Il bottone «Esci» resta global.
 - **Push: niente Expo Go.** Dall'SDK 53 le push remote sono state rimosse da Expo Go → si provano solo con un
   **development build EAS** (+ Firebase/FCM su Android). In Expo Go `registerPushToken` risponde
   `unsupported` e non registra nulla: è il comportamento voluto, non un bug.
