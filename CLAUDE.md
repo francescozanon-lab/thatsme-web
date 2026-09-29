@@ -213,14 +213,14 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   `contact_requests`: `Provenienza.tsx` è già stato semplificato (niente più `category` nel select né
   ripiego, `CATEGORY` tolta da `lib/panel-theme.ts`). Le richieste di luglio si leggono tramite le 3
   categorie «storiche» disattivate: **non cancellarle**, sono la loro etichetta.
-- ✍️ **28/09/2026 — password degli psicologi** (voce 1 della scaletta), **in questo repo**: «Primo accesso
+- ✅ **28-29/09/2026 — password degli psicologi** (voce 1 della scaletta), **in questo repo**: «Primo accesso
   o password dimenticata?» (`app/login/password`), pagina del link con «Continua» (`app/login/conferma`, un
   POST apposta: i filtri antispam che aprono i link non lo consumano), «Scegli la password» dietro il gate
   (`app/(panel)/profilo/password`) + «Cambia password» nel profilo. Stili delle pagine d'accesso condivisi
   in `app/login/auth-styles.ts` + `AuthCard.tsx`. Account nuovi con `thatsme-app/db/add_professional.sql`
-  (da applicare). `tsc`/lint/build verdi; **attivata** nel dashboard (`thatsme-app/supabase/README.md`,
-  sezione I) e **controprovata** (un account da ragazzo viene respinto). ⏳ La prova da psicologo si fa
-  dopo il dominio.
+  (**applicata** il 29/09). Attivata nel dashboard (`thatsme-app/supabase/README.md`, sezione I),
+  controprovata (un ragazzo viene respinto) e ✅ **provata da psicologo il 29/09**. Psicologo di prova
+  nuovo: `francesco.zanon99+psicologo@gmail.com`.
 - In parallelo, **binario legale** F1→F2 (~~F3.5~~ tolto) = cancello per **B2** (ragazzi veri), in mano al
   cliente. Decisioni 28-31 (22-23/09/2026) in `thatsme-app/progress.md`.
 
