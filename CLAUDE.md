@@ -99,8 +99,8 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - ✅ **Resend: dominio `thats-me.it` VERIFICATO il 28/09/2026** (record DNS su SiteGround, server in
   Irlanda, niente tracciamento, TLS obbligatorio). I **codici d'accesso** e le email della password degli
   psicologi (SMTP custom di Supabase = Resend, mittente `notifiche@thats-me.it`) arrivano a chiunque.
-  ⚠️ Le email della funzione `notify` invece vanno **ancora tutte a `francesco.zanon99@gmail.com`** finché
-  nei secrets c'è `NOTIFY_EMAIL_OVERRIDE` (`thatsme-app/supabase/README.md`, sezione G).
+  Dal 29/09 anche le email della funzione `notify` agli psicologi: `NOTIFY_EMAIL_OVERRIDE` **tolto**,
+  `RESEND_FROM` impostato (sezione G di `thatsme-app/supabase/README.md`, chiusa).
 - ⚠️⚠️ **Deploy di QUESTO repo su Vercel: regione Francoforte (`fra1`).** `casi/[id]/page.tsx` legge i
   messaggi **lato server**: con la regione predefinita (USA) i testi delle chat transiterebbero fuori
   dall'UE, pur essendo conservati a Francoforte. Si imposta al primo deploy, ed è la cosa che si dimentica.
@@ -156,11 +156,10 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
   ragazzo su presa in carico / nuova risposta / commiato. **Non tocca il pannello** — è il motivo per cui è
   stata scelta quell'architettura. File (lato `thatsme-app`): `db/push_tokens.sql`, `db/notify_grants.sql`,
   `db/notify_pool.sql`, `supabase/functions/notify/index.ts`, `src/lib/push.ts`.
-  ⚠️ **Il secret `NOTIFY_EMAIL_OVERRIDE`** dirotta ancora tutte le email del pool su Francesco. Il dominio
-  **`thats-me.it`** è verificato dal 28/09/2026: si toglie col resto della sezione G di
-  `thatsme-app/supabase/README.md`.
-  🔐 **Da fare prima del pilota:** rigenerare `NOTIFY_HOOK_SECRET` (transitato in chiaro durante il debug
-  del 27/07) — nuovo secret + stesso valore nell'header dei due webhook + **deploy rifatto**.
+  ✅ **29/09/2026:** `NOTIFY_EMAIL_OVERRIDE` tolto (ogni psicologo riceve le sue email) e 🔐
+  **`NOTIFY_HOOK_SECRET` rigenerato** (quello di luglio era transitato in chiaro): nuovo secret + stesso
+  valore nell'header dei due webhook + deploy rifatto. Provati email e push. ⚠️ Dopo quel deploy
+  «Verify JWT» risultava acceso: **ricontrollarlo dopo ogni deploy** dal dashboard.
 - ✅ **P4.3 polish — CHIUSA (A+B+C 27/07, D ed E 28/07, prova end-to-end di E 29/07/2026).**
   **→ Il CODICE di B1 è finito**: resta la distribuzione, e per questo repo significa **P0.4 = deploy su
   Vercel** (poi il secret `PANEL_URL`). Censimento completo in `progress.md`.
