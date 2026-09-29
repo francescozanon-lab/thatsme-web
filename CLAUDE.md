@@ -104,6 +104,10 @@ L'app tratterà **dati sensibili di minori**. Regole non negoziabili quando si l
 - ⚠️⚠️ **Deploy di QUESTO repo su Vercel: regione Francoforte (`fra1`).** `casi/[id]/page.tsx` legge i
   messaggi **lato server**: con la regione predefinita (USA) i testi delle chat transiterebbero fuori
   dall'UE, pur essendo conservati a Francoforte. Si imposta al primo deploy, ed è la cosa che si dimentica.
+  ✅ Dal 29/09/2026 la fissa **`vercel.json`** (`"regions": ["fra1"]`), versionato: non dipende più da
+  un'impostazione del dashboard. Dopo ogni deploy si controlla lo stesso che le funzioni risultino in
+  Frankfurt. ⚠️ `export const preferredRegion` nelle pagine **non** serve: su Vercel vale solo col runtime
+  edge (guida di Next 16).
 - ⚠️ **Deploy di QUESTO repo: aggiungere `https://<pannello>/login/conferma` ai «Redirect URLs» di
   Supabase** (`thatsme-app/supabase/README.md`, sezione I). Senza, «Primo accesso o password dimenticata?»
   manda email con un link che porta nel posto sbagliato, e nessuno psicologo riesce a scegliersi la password.
